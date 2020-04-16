@@ -1,0 +1,67 @@
+<resources>
+
+<!-- Base application theme. -->
+<style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+    <!-- Customize your theme here. -->
+    <item name="colorPrimary">@color/colorPrimary</item>
+    <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+    <item name="colorAccent">@color/colorAccent</item>
+    <item name="colorControlNormal">@color/grey_60</item>
+</style>
+
+<style name="PopupMenu" parent="Widget.AppCompat.PopupMenu">
+    <item name="color">@color/grey_40</item>
+</style>
+
+<style name="ToolbarHomeStyle" parent="@style/AppTheme">
+    <item name="drawerArrowStyle">@style/DrawerIcon</item>
+    <item name="popupMenuStyle">@style/PopupMenu</item>
+</style>
+
+<style name="DrawerIcon" parent="Widget.AppCompat.DrawerArrowToggle">
+    <item name="color">@color/grey_60</item>
+</style>
+
+<style name="DrawerStyle" parent="@style/ThemeOverlay.AppCompat.Light">
+    <item name="colorControlHighlight">#00000000</item> "
+</style>
+
+<style name="RippleStyleWhite">
+    <item name="mrl_rippleOverlay">true</item>
+    <item name="mrl_rippleColor">#80FFFFFF</item>
+    <item name="mrl_rippleHover">true</item>
+    <item name="mrl_rippleAlpha">0.2</item>
+</style>
+
+<style name="RippleStyleBlack" parent="RippleStyleWhite">
+    <item name="mrl_rippleColor">#8096989A</item>
+</style>
+
+<style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+<style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+<style name="DatePickerTheme" parent="Theme.AppCompat.Light.Dialog">
+    <item name="colorPrimary">@color/colorPrimary</item>
+    <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+    <item name="colorAccent">@color/colorPrimary</item>
+</style>
+
+<style name="AppTheme.Dialog.NoActionBar" parent="Theme.AppCompat.Light.Dialog">
+    <item name="windowNoTitle">true</item>
+    <item name="windowActionBar">false</item>
+</style>
+
+<!-- Setting theme. -->
+<style name="AppThemeSetting" parent="Theme.AppCompat.Light.DarkActionBar">
+    <!-- Customize your theme here. -->
+    <item name="colorPrimary">@color/colorPrimary</item>
+    <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+    <item name="colorAccent">@color/colorAccent</item>
+</style>
+
+<style name="AppThemeSetting.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+<style name="AppThemeSetting.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+</resources>

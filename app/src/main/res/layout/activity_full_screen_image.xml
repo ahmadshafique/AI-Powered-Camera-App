@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    android:fitsSystemWindows="false">
+
+    <android.support.v4.view.ViewPager
+        android:id="@+id/pager"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" />
+
+    <ImageButton
+        android:id="@+id/btnClose"
+        android:layout_width="@dimen/spacing_xxlarge"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/spacing_middle"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:tint="@android:color/white"
+        style="@style/Base.Widget.AppCompat.Button.Borderless"
+        android:src="@drawable/ic_clear" />
+
+    <TextView
+        android:id="@+id/text_page"
+        android:background="@drawable/shape_overlay"
+        android:layout_width="match_parent"
+        android:minHeight="@dimen/spacing_xxlarge"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:textColor="@android:color/white"
+        android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
+        android:gravity="center"/>
+
+</RelativeLayout>

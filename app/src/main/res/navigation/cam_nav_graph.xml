@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/cam_nav_graph"
+        app:startDestination="@id/permissionFragment">
+
+    <fragment
+            android:id="@+id/permissionFragment"
+            android:name="com.fyp.aipoweredcameraapp.camera_ui.permission.PermissionFragment"
+            android:label="PermissionFragment"/>
+
+    <fragment
+            android:id="@+id/cameraFragment"
+            android:name="com.fyp.aipoweredcameraapp.camera_ui.preview.CameraFragment"
+            android:label="CameraFragment"/>
+
+    <fragment
+            android:id="@+id/imagePreviewFragment"
+            android:name="com.fyp.aipoweredcameraapp.camera_ui.gallery.GalleryFragment"
+            android:label="ImagePreviewFragment"/>
+</navigation>
