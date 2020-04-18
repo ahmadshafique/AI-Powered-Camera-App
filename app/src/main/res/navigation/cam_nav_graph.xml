@@ -15,8 +15,4 @@
             android:name="com.fyp.aipoweredcameraapp.camera_ui.preview.CameraFragment"
             android:label="CameraFragment"/>
 
-    <fragment
-            android:id="@+id/imagePreviewFragment"
-            android:name="com.fyp.aipoweredcameraapp.camera_ui.gallery.GalleryFragment"
-            android:label="ImagePreviewFragment"/>
 </navigation>

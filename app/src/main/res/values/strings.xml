@@ -7,11 +7,11 @@
     <string name="title_about">Developers</string>
     <string name="content_about">\nAhmad Shafique\nAhmed Zubair\nMuhammad Rizwan\nArsalan Younas</string>
     <string name="title_EI">Create an Enhanced Image</string>
-    <string name="desc_EI">Opens camera interface to capture an enhanced image having low noise and better sharpness</string>
-    <string name="title_FF">Edit Facial Features</string>
-    <string name="desc_FF">Select an image from gallery to edit facial features in it using facial map</string>
+    <string name="desc_EI">Creates an enhanced image having low noise and better sharpness from the provided image.</string>
+    <string name="title_FF">Edit a Facial Feature</string>
+    <string name="desc_FF">Edits facial feature using a facial map in the provided image.</string>
     <string name="title_SM">Manipulate a Selfie</string>
-    <string name="desc_SM">Select an image from gallery to edit parameters such as yaw, pitch and distance from camera in the image</string>
+    <string name="desc_SM">Manipulates parameters such as yaw, pitch and distance from camera in the provided image.</string>
     <string name="press_again_exit_app">Press again to exit</string>
 
     <!--All data ActivityFullScreenImage.java -->
@@ -21,12 +21,15 @@
     <!--All data for Other Activities -->
     <string name="camera_not_found">No camera on this device</string>
     <string name="select_image">Select an Image</string>
+    <string name="image_preview">Image Preview</string>
     <string name="please_wait_text">Please wait while the image id processed…</string>
     <string name="final_output_image">Final Output Image</string>
-    <string name="select_facial_features_from_map">Select Facial Features from Map</string>
+    <string name="select_facial_features">Select Facial Features</string>
     <string name="select_fiducial_points">Select Fiducial Points</string>
 
     <!-- Other String -->
+    <string name="title_get_image">Select Image Source</string>
+    <string name="msg_get_image">Select camera to capture an image or use one from gallery</string>
     <string name="title_info">Information</string>
     <string name="title_no_internet">No Internet Connection</string>
     <string name="msg_no_internet">Please check your Internet connection and try again</string>
@@ -37,11 +40,16 @@
     <string name="version_unknown">Unknown</string>
     <string name="app_version">1.0</string>
 
+    <string name="CAMERA">CAMERA</string>
+    <string name="GALLERY">GALLERY</string>
     <string name="OK">OK</string>
     <string name="GOT_IT">GOT IT</string>
     <string name="YES">YES</string>
     <string name="NO">NO</string>
+    <string name="RETAKE">RETAKE</string>
     <string name="RESELECT">RESELECT</string>
+    <string name="UPLOAD">UPLOAD</string>
+    <string name="PROCESS">PROCESS</string>
     <string name="CANCEL">CANCEL</string>
     <string name="CLOSE">CLOSE</string>
     <string name="DISMISS">DISMISS</string>
@@ -52,6 +60,8 @@
     <string name="NO_IMAGE">NO IMAGE</string>
     <string name="OPEN">OPEN</string>
     <string name="SAVE">SAVE</string>
+    <string name="PREVIOUS">PREVIOUS</string>
+    <string name="BACK">BACK</string>
     <string name="NEXT">NEXT</string>
     <string name="SKIP">SKIP</string>
     <string name="EMPTY"> </string>

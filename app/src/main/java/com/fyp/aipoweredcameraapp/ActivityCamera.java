@@ -1,18 +1,16 @@
 package com.fyp.aipoweredcameraapp;
 
-import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 public class ActivityCamera extends AppCompatActivity {
 
-    private Activity activityCamera;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        activityCamera = this;
         setContentView(R.layout.activity_camera);
     }
 
@@ -39,6 +37,10 @@ public class ActivityCamera extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+
+        Intent i = new Intent(ActivityCamera.this, ActivityMain.class);
+        startActivity(i);
+
         finish();
     }
 

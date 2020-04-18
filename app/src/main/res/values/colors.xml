@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_app_launcher_background">#FFFBF0</color>
+    <color name="ic_app_launcher_background">#fff</color>
 
     <color name="colorPrimary">#62BAFF</color>
     <color name="colorPrimaryDark">#62BAFF</color>
@@ -26,6 +26,7 @@
 
     <color name="colorWarning">#FF7043</color>
     <color name="colorInfo">#00E0FF</color>
+    <color name="colorSelection">#3f50b4</color>
     <color name="colorSuccess">#91C25E</color>
     <!--<color name="colorInfo">#5DBA60</color>-->
 

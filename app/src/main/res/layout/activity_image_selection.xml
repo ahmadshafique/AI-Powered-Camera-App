@@ -3,9 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/black">
 
     <include layout="@layout/toolbar" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
     <ImageView
         android:id="@+id/loadImageView"
@@ -20,13 +25,13 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/reselect_image"
+            android:id="@+id/previous"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginBottom="@dimen/spacing_mlarge"
             android:layout_gravity="center_horizontal"
-            android:text="@string/RESELECT" />
+            android:text="@string/PREVIOUS" />
 
         <Button
             android:id="@+id/next"

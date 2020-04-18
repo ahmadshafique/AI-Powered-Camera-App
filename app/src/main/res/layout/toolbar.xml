@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/colorPrimary"
+    app:titleTextAppearance="@style/ToolbarStyle"
     app:contentInsetStartWithNavigation="0dp"
     app:paddingEnd="@dimen/spacing_medium"
     android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"

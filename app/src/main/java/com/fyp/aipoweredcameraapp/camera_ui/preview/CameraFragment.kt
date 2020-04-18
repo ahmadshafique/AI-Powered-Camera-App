@@ -1,5 +1,7 @@
 package com.fyp.aipoweredcameraapp.camera_ui.preview
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.util.Log
@@ -11,16 +13,14 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.TextureViewMeteringPointFactory
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.navigation.Navigation
+import com.fyp.aipoweredcameraapp.ActivityImageSelection
 import com.google.common.util.concurrent.ListenableFuture
 import com.fyp.aipoweredcameraapp.R
-import com.fyp.aipoweredcameraapp.camera_ui.gallery.GalleryFragment
 import com.fyp.aipoweredcameraapp.camera_ui.preview.FileCreator.JPEG_FORMAT
 import kotlinx.android.synthetic.main.fragment_camera.*
 import java.io.File
 import java.util.concurrent.Executors
 import kotlin.math.abs
-
 
 class CameraFragment : Fragment() {
 
@@ -106,9 +106,12 @@ class CameraFragment : Fragment() {
                     executor,
                     object : ImageCapture.OnImageSavedCallback {
                         override fun onImageSaved(file: File) {
-                            val arguments = GalleryFragment.arguments(file.absolutePath)
-                            Navigation.findNavController(requireActivity(), R.id.cameraContent)
-                                    .navigate(R.id.imagePreviewFragment, arguments)
+
+                            val intent = Intent(requireContext(), ActivityImageSelection::class.java)
+                            intent.putExtra("image_source", "camera")
+                            intent.putExtra("filePath", file.absolutePath)
+                            startActivity(intent)
+
                         }
 
                         override fun onError(imageCaptureError: Int, message: String, cause: Throwable?) {

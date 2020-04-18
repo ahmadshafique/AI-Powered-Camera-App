@@ -5,12 +5,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import com.fyp.aipoweredcameraapp.data.SharedPref;
+import com.fyp.aipoweredcameraapp.utils.CallbackDialog;
+import com.fyp.aipoweredcameraapp.utils.DialogUtils;
 import com.fyp.aipoweredcameraapp.utils.Tools;
 
 public class ActivityMain extends AppCompatActivity {
@@ -19,6 +23,7 @@ public class ActivityMain extends AppCompatActivity {
     private Toolbar toolbar;
     ImageButton btn_about;
     CardView enhanced_image, facial_features, selfie_manipulation;
+    private SharedPref sharedPref;
 
     private ActivityMain activityMain;
 
@@ -27,6 +32,7 @@ public class ActivityMain extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         activityMain = this;
+        sharedPref = new SharedPref(this);
         initToolbar();
         initComponent();
     }
@@ -48,41 +54,48 @@ public class ActivityMain extends AppCompatActivity {
         });
     }
 
-    private void initComponent() {
-        enhanced_image = (CardView) findViewById(R.id.enhanced_image);
-        enhanced_image.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-               onClickLaunchActivity(v.getId());
-            }
-        });
-        facial_features = (CardView) findViewById(R.id.facial_features);
-        facial_features.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onClickLaunchActivity((v.getId()));
-            }
-        });
-        selfie_manipulation = (CardView) findViewById(R.id.selfie_manipulation);
-        selfie_manipulation.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onClickLaunchActivity(v.getId());
-            }
-        });
+    private View.OnClickListener cardOnClickListener() {
+        return v -> {
+            sharedPref.setPref("module_selected", v.getId());
+            dialogGetImage();
+        };
     }
 
-    protected void onClickLaunchActivity(int id) {
-        Intent i;
-        if (id == R.id.enhanced_image)
-            i = new Intent(ActivityMain.this, ActivityCamera.class);
-        else if (id == R.id.facial_features)
-            i = new Intent(ActivityMain.this, ActivityImageSelection.class);
-        else //if (id == R.id.selfie_manipulation)
-            i = new Intent(ActivityMain.this, ActivityImageSelection.class);
+    private void initComponent() {
+        enhanced_image = (CardView) findViewById(R.id.enhanced_image);
+        enhanced_image.setOnClickListener(cardOnClickListener());
+        facial_features = (CardView) findViewById(R.id.facial_features);
+        facial_features.setOnClickListener(cardOnClickListener());
+        selfie_manipulation = (CardView) findViewById(R.id.selfie_manipulation);
+        selfie_manipulation.setOnClickListener(cardOnClickListener());
+    }
 
-        startActivity(i);
-        //finish();
+
+    public void dialogGetImage() {
+            Dialog dialog = new DialogUtils(this).buildDialogSelection(R.string.title_get_image, R.string.msg_get_image, R.string.CAMERA, R.string.GALLERY, R.string.CLOSE, R.drawable.img_select_source, new CallbackDialog() {
+                @Override
+            public void onPositiveClick(Dialog dialog) {
+                //camera source
+                dialog.dismiss();
+                Intent i = new Intent(ActivityMain.this, ActivityCamera.class);
+                startActivity(i);
+
+                //kill current activity
+                finish();
+            }
+            @Override
+            public void onNegativeClick(Dialog dialog) {
+                //gallery source
+                dialog.dismiss();
+                Intent i = new Intent(ActivityMain.this, ActivityImageSelection.class);
+                i.putExtra("image_source", "gallery");
+                startActivity(i);
+
+                //kill current activity
+                finish();
+            }
+        });
+        dialog.show();
     }
 
     @Override

@@ -124,4 +124,69 @@ public class DialogUtils {
         return dialog;
     }
 
+    public Dialog buildDialogSelection(@StringRes int title, @StringRes int content, @StringRes int bt_option_1, @StringRes int bt_option_2, @StringRes int bt_close, @DrawableRes int icon, final CallbackDialog callback) {
+        String _title = null;
+        String _content = null;
+        String _bt_close = null;
+
+        if (title != -1) _title = activity.getString(title);
+        if (content != -1) _content = activity.getString(content);
+        if (bt_close != -1) _bt_close = activity.getString(bt_close);
+
+        return buildDialogSelection(_title, _content, activity.getString(bt_option_1), activity.getString(bt_option_2), _bt_close, icon, callback);
+    }
+
+
+    // dialog selection
+    public Dialog buildDialogSelection(String title, String content, String bt_option_1, String bt_option_2, String bt_close, @DrawableRes int icon, final CallbackDialog callback) {
+        final Dialog dialog = buildDialogView(R.layout.dialog_selection);
+
+        // if id = -1 view will gone
+        if (title != null) {
+            ((TextView) dialog.findViewById(R.id.title)).setText(title);
+        } else {
+            ((TextView) dialog.findViewById(R.id.title)).setVisibility(View.GONE);
+        }
+
+        // if id = -1 view will gone
+        if (content != null) {
+            ((TextView) dialog.findViewById(R.id.content)).setText(content);
+        } else {
+            ((TextView) dialog.findViewById(R.id.content)).setVisibility(View.GONE);
+        }
+        ((Button) dialog.findViewById(R.id.bt_opt_1)).setText(bt_option_1);
+        ((Button) dialog.findViewById(R.id.bt_opt_2)).setText(bt_option_2);
+
+
+        if (bt_close != null) {
+            ((Button) dialog.findViewById(R.id.bt_close)).setText(bt_close);
+        } else {
+            ((Button) dialog.findViewById(R.id.bt_close)).setVisibility(View.GONE);
+        }
+        ((ImageView) dialog.findViewById(R.id.icon)).setImageResource(icon);
+
+        ((Button) dialog.findViewById(R.id.bt_opt_1)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                callback.onPositiveClick(dialog);
+            }
+        });
+
+        ((Button) dialog.findViewById(R.id.bt_opt_2)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                callback.onNegativeClick(dialog);
+            }
+        });
+
+        ((Button) dialog.findViewById(R.id.bt_close)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+                //callback.onCloseClick(dialog);
+            }
+        });
+
+        return dialog;
+    }
 }

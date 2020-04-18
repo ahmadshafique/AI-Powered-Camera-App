@@ -9,6 +9,11 @@
     <item name="colorControlNormal">@color/grey_60</item>
 </style>
 
+<style name="ToolbarStyle" parent="TextAppearance.AppCompat.Headline">
+    <item name="android:textColor">@color/grey_60</item>
+    <item name="android:textStyle">bold</item>
+</style>
+
 <style name="PopupMenu" parent="Widget.AppCompat.PopupMenu">
     <item name="color">@color/grey_40</item>
 </style>

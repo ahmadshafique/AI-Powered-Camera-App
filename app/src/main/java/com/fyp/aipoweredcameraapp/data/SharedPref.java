@@ -40,4 +40,16 @@ public class SharedPref {
         return sharedPreferences.getBoolean(key, false);
     }
 
+    /**
+     * For other preferences
+     * @param key
+     * @param value
+     */
+
+    public void setPref(String key, int value) {
+        sharedPreferences.edit().putInt(key, value).apply();
+    }
+
+    public int getPref(String key) { return sharedPreferences.getInt(key, -1); }
+
 }

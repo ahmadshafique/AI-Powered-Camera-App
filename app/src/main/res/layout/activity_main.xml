@@ -14,22 +14,15 @@
         android:background="@color/colorPrimary"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentLeft="true"
-            android:theme="@style/ToolbarHomeStyle"
-            app:contentInsetStartWithNavigation="0dp"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.Dark"
-            app:titleTextColor="@color/grey_60" />
+        <include layout="@layout/toolbar"/>
 
         <ImageButton
             android:id="@+id/about"
             android:layout_width="?attr/actionBarSize"
             android:layout_height="?attr/actionBarSize"
             android:layout_alignParentRight="true"
+            android:scaleX="0.8"
+            android:scaleY="0.8"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_dialog_info"
             android:tint="@color/grey_60" />

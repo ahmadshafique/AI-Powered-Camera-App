@@ -25,6 +25,7 @@ public class ActivitySplash extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
         sharedPref = new SharedPref(this);
+        Tools.setSystemBarColor(this, "white");
     }
 
     @Override

@@ -6,4 +6,5 @@ object FileCreator {
 
     fun createTempFile(fileFormat: String) =
         createTempFile(System.currentTimeMillis().toString(), fileFormat)
+
 }
