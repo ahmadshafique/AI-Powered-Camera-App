@@ -28,7 +28,7 @@
     <color name="colorInfo">#00E0FF</color>
     <color name="colorSelection">#3f50b4</color>
     <color name="colorSuccess">#91C25E</color>
-    <!--<color name="colorInfo">#5DBA60</color>-->
+    <color name="colorSuccessDark">#5DBA60</color>
 
     <color name="darkOverlay">#80000000</color>
     <color name="darkOverlaySoft">#40000000</color>

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AiCam</string>
+    <string name="app_name">CamAI</string>
     <string name="app_tag_line"></string>
 
     <!--All data for ActivityMain.java -->
