@@ -2,12 +2,16 @@ package com.fyp.aipoweredcameraapp.camera_ui.preview
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Bundle
+import android.os.Environment
+import android.text.TextUtils
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Size
 import android.view.*
 import android.widget.Toast
+import androidx.annotation.Nullable
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.TextureViewMeteringPointFactory
@@ -21,6 +25,20 @@ import kotlinx.android.synthetic.main.fragment_camera.*
 import java.io.File
 import java.util.concurrent.Executors
 import kotlin.math.abs
+import androidx.camera.core.ImageCapture
+//import com.sun.imageio.plugins.jpeg.JPEG
+import org.opencv.core.CvType
+import org.opencv.core.Mat
+import org.opencv.imgcodecs.Imgcodecs
+import org.opencv.core.MatOfByte
+import androidx.camera.core.ImageProxy
+import org.opencv.android.Utils
+import java.io.ByteArrayOutputStream
+import java.io.FileOutputStream
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
+
 
 class CameraFragment : Fragment() {
 
@@ -31,10 +49,17 @@ class CameraFragment : Fragment() {
     private var x2: Float = 0.0F
     private var deltaX: Float = 0.0F
     private val MinDistance = 150
+    private lateinit var previewUsecase: Preview
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         processCameraProviderFuture = ProcessCameraProvider.getInstance(requireContext())
+    }
+
+    companion object {
+        init {
+            System.loadLibrary("native-lib")
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -57,13 +82,13 @@ class CameraFragment : Fragment() {
     }
 
     private fun setupCamera() {
+        previewUsecase = buildPreviewUseCase()
         processCameraProvider.unbindAll()
         val camera = processCameraProvider.bindToLifecycle(
                 this,
                 lensFacing,
-                buildPreviewUseCase(),
-                buildImageCaptureUseCase(),
-                buildImageAnalysisUseCase())
+                previewUsecase,
+                buildImageCaptureUseCase())
         setupTapFunctions(camera.cameraControl)
     }
 
@@ -86,8 +111,8 @@ class CameraFragment : Fragment() {
         val metrics = DisplayMetrics().also { display.getMetrics(it) }
         val capture = ImageCapture.Builder()
                 .setTargetRotation(display.rotation)
-                .setTargetResolution(Size(metrics.widthPixels, metrics.heightPixels))
-                .setFlashMode(ImageCapture.FLASH_MODE_AUTO)
+                .setTargetResolution(Size(2000, 2000))
+                .setFlashMode(ImageCapture.FLASH_MODE_OFF)
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
                 .build()
 
@@ -100,29 +125,79 @@ class CameraFragment : Fragment() {
                 isReversedHorizontal = lensFacing == CameraSelector.DEFAULT_FRONT_CAMERA
             }
 
-            capture.takePicture(
-                    FileCreator.createTempFile(JPEG_FORMAT),
-                    metadata,
-                    executor,
-                    object : ImageCapture.OnImageSavedCallback {
-                        override fun onImageSaved(file: File) {
+            val sdf = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+            val currentDateandTime = sdf.format( Date());
+            //String root = Environment.getExternalStorageDirectory().getPath();
+            val folder = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Picturestry4");
+            if(!folder.exists()){
+                folder.mkdirs();
+            }
+            val fileName = folder.getPath() + "/sample_picture_" + currentDateandTime + ".jpg";
 
-                            val intent = Intent(requireContext(), ActivityImageSelection::class.java)
-                            intent.putExtra("image_source", "camera")
-                            intent.putExtra("filePath", file.absolutePath)
-                            startActivity(intent)
+            capture.takePicture(executor, object : ImageCapture.OnImageCapturedCallback() {
+                override fun onCaptureSuccess(image: ImageProxy) {
+                    val bb = image.planes[0].buffer
+                    val buf = ByteArray(bb.remaining())
+                    bb.get(buf)
 
+                    //Store the picture in mat object
+                    val prev = Imgcodecs.imdecode(MatOfByte(*buf), Imgcodecs.IMREAD_UNCHANGED)
+                    image.close()
+
+                    val res = Mat(prev.cols(), prev.rows(), CvType.CV_8UC3)
+
+                    //Pass mat to native C++ function
+                    synEFFromJNI(prev.nativeObjAddr, res.nativeObjAddr)
+
+                    val img = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888)
+                    Utils.matToBitmap(res, img)
+                    val stream = ByteArrayOutputStream()
+                    img.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+
+                    val data2 = stream.toByteArray()
+                    val mPictureFileName2: String
+                    val arr = fileName.split("/").toMutableList()
+                    arr[6] = "AICam" + arr[6]
+                    mPictureFileName2 = TextUtils.join("/", arr)
+
+                    try {
+                        val fos = FileOutputStream(fileName)
+
+                        fos.write(buf)
+                        //img.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                        fos.close()
+
+                        val fos2 = FileOutputStream(mPictureFileName2)
+
+                        fos2.write(data2)
+                        //img.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                        fos2.close()
+
+                        activity!!.runOnUiThread {
+                            val msg = "Photo capture succeeded"
+                            Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
                         }
 
-                        override fun onError(imageCaptureError: Int, message: String, cause: Throwable?) {
-                            Toast.makeText(requireContext(), "Error: $message", Toast.LENGTH_LONG).show()
-                            Log.e("CameraFragment", "Capture error $imageCaptureError: $message", cause)
-                        }
-                    })
+                    } catch (e: IOException) {
+                        Log.e("CameraFragment", "Exception in photoCallback", e)
+                    }
+
+                }
+
+                override fun onError(imageCaptureError: Int, message: String, cause: Throwable?) {
+                    activity!!.runOnUiThread {
+                        Toast.makeText(requireContext(), "Error: $message", Toast.LENGTH_LONG).show()
+                    }
+
+                    Log.e("CameraFragment", "Capture error $imageCaptureError: $message", cause)
+                }
+            })
+
         }
         return capture
     }
 
+    /*
     private fun buildImageAnalysisUseCase(): ImageAnalysis {
         val display = viewFinder.display
         val metrics = DisplayMetrics().also { display.getMetrics(it) }
@@ -140,6 +215,8 @@ class CameraFragment : Fragment() {
                 })
         return analysis
     }
+
+     */
 
     private fun setupTapFunctions(cameraControl: CameraControl) {
         viewFinder.setOnTouchListener { _, event ->
@@ -181,5 +258,7 @@ class CameraFragment : Fragment() {
         else
             lensFacing = CameraSelector.DEFAULT_BACK_CAMERA
     }
+
+    external fun synEFFromJNI(frame: Long, res: Long): Long
 
 }
