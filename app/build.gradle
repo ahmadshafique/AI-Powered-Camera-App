@@ -41,9 +41,21 @@ android {
     }
     sourceSets {
         main {
-            jniLibs.srcDirs = ['C:\\Users\\Ahmad\\AndroidStudioProjects\\AI-Powered-Camera-APP\\app\\src\\main\\jniLibs']
+            jniLibs.srcDirs = ['C:\\Users\\ahmad\\AndroidStudioProjects\\AI-Powered-Camera-App-ie\\app\\src\\main\\jniLibs']
         }
     }
+    packagingOptions {
+        pickFirst 'lib/armeabi-v7a/libopencv_java4.so'
+        pickFirst 'lib/arm64-v8a/libopencv_java4.so'
+        pickFirst 'lib/x86_64/libopencv_java4.so'
+        pickFirst 'lib/x86/libopencv_java4.so'
+        pickFirst '**/*.so'
+    }
+    /*allprojects {
+        tasks.withType(JavaCompile) {
+            options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        }
+    }*/
 }
 
 dependencies {

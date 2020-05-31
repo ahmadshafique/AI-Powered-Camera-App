@@ -1,2 +1,2 @@
-include ':app', 'OpenCV'
+include ':app','OpenCV'
 rootProject.name='AI Powered Camera App'
