@@ -283,7 +283,7 @@ void synEF(Mat *prev, Mat *res, float g) {
 
     mres.convertTo(mres, CV_8UC3, 255, 0);
 
-    if(g == 2.2)
+    if(g >= 2)
         correction(mres, mprev);
 }
 

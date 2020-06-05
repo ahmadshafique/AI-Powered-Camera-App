@@ -213,9 +213,11 @@ Java_com_example_try4_MainActivity_synEF_L_FromJNI(JNIEnv *env, jobject thiz, jl
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_fyp_aipoweredcameraapp_ActivityImageSelection_synEFFromJNI(JNIEnv *env, jobject thiz, jobject frame, jobject res) {
+Java_com_fyp_aipoweredcameraapp_ActivityImageSelection_synEFFromJNI(JNIEnv *env, jobject thiz, jlong frame, jlong res) {
     Mat &mprev = *(Mat *) frame;
     Mat &mres = *(Mat *) res;
+
+    cvtColor(mprev, mprev, COLOR_BGRA2RGB);
 
     runner(mprev, mres);
     cvtColor(mres, mres, COLOR_RGB2BGR);

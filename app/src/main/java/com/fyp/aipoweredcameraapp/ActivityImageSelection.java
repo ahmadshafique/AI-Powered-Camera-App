@@ -7,12 +7,13 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.text.TextUtils;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -27,6 +28,7 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.bumptech.glide.Glide;
 import com.fyp.aipoweredcameraapp.data.ServicesDatabase;
 import com.fyp.aipoweredcameraapp.data.SharedPref;
 import com.fyp.aipoweredcameraapp.utils.CallbackDialog;
@@ -36,6 +38,7 @@ import com.fyp.aipoweredcameraapp.utils.PermissionUtil;
 import com.fyp.aipoweredcameraapp.utils.Tools;
 import com.google.android.material.snackbar.Snackbar;
 
+import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
@@ -71,7 +74,7 @@ public class ActivityImageSelection extends AppCompatActivity {
 
     public static final int GET_FROM_GALLERY = 1;
 
-    static {
+    /*static {
         try {
             System.loadLibrary("native-lib");
 
@@ -82,7 +85,7 @@ public class ActivityImageSelection extends AppCompatActivity {
     }
     //static { System.loadLibrary("native-lib"); }
     native void synEFFromJNI(Long frame, Long res);
-
+*/
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,9 +96,9 @@ public class ActivityImageSelection extends AppCompatActivity {
         sharedPref = new SharedPref(this);
         module_selected = sharedPref.getPref("module_selected");
         image_source = getIntent().getStringExtra("image_source");
-        img = findViewById(R.id.loadImageView);
-        previousBtn = findViewById(R.id.previous);
-        nextBtn = findViewById(R.id.next);
+        img = (ImageView) findViewById(R.id.loadImageView);
+        previousBtn = (Button) findViewById(R.id.previous);
+        nextBtn = (Button) findViewById(R.id.next);
 
         initToolbar();
         if (image_source.equals("camera"))
@@ -110,6 +113,7 @@ public class ActivityImageSelection extends AppCompatActivity {
         else // if (module_selected == R.id.selfie_manipulation)
             initSelfieManipulation();
 
+        System.loadLibrary("native-lib");
     }
 
     private void initEnhanceImage() {
@@ -143,7 +147,7 @@ public class ActivityImageSelection extends AppCompatActivity {
     }
 
     private void initToolbar() {
-        toolbar = findViewById(R.id.toolbar);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
@@ -163,8 +167,10 @@ public class ActivityImageSelection extends AppCompatActivity {
         else {
             imgPath = Uri.parse(filePath);
             img.setImageURI(imgPath);
-            File imgFile = new File(filePath);
-            imgFile.deleteOnExit();
+            //img.setImageURI(Uri.parse(filePath));
+            Glide.with(img.getContext())
+                    .load(filePath)
+                    .into(img);
         }
         previousBtn.setText(R.string.RETAKE);
         previousBtn.setOnClickListener(new View.OnClickListener() {
@@ -282,12 +288,13 @@ public class ActivityImageSelection extends AppCompatActivity {
         //Store the picture in mat object
 
         //Mat prev = Imgcodecs.imdecode(mat, Imgcodecs.IMREAD_UNCHANGED);
+        Bitmap bitmap = ((BitmapDrawable)img.getDrawable()).getBitmap();
+        Mat prev = new Mat();
+        Utils.bitmapToMat(bitmap, prev);
         Mat res = new Mat(prev.cols(), prev.rows(), CvType.CV_8UC3);
+        synEFFromJNI(prev.getNativeObjAddr(), res.getNativeObjAddr());
 
-        //Pass mat to native C++ functions
-        //synEFFromJNI(prev.dataAddr(), res.dataAddr());
-
-        Log.d("done", "done");
+        //Pass mat to native C++ function
 
         //AiCam image
         Bitmap img = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888);
@@ -298,8 +305,14 @@ public class ActivityImageSelection extends AppCompatActivity {
 
         //Sample image
         ByteArrayOutputStream stream1 = new ByteArrayOutputStream();
-        imgBmp.compress(Bitmap.CompressFormat.JPEG, 100, stream1);
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream1);
         byte[] data1 = stream1.toByteArray();
+
+        /*
+        String[] arr = fileName.split("/");
+        arr[6] = "AICam" + arr[6];
+        String mPictureFileName2 = TextUtils.join("/", arr);
+        */
 
         try {
             FileOutputStream fos = new FileOutputStream(sampleFileName);
@@ -310,12 +323,13 @@ public class ActivityImageSelection extends AppCompatActivity {
             fos2.write(data2);
             fos2.close();
 
-            String msg = "Photo capture succeeded";
+            String msg = "Photo capture succeeded at" + folder.getAbsolutePath();
             Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
         } catch (IOException e) {
             Log.e("CameraFragment", "Exception in photoCallback", e);
         }
 
+        previousBtn.performClick();
     }
 
     public void dialogNoInternet() {
@@ -348,8 +362,7 @@ public class ActivityImageSelection extends AppCompatActivity {
             startActivity(i);
             //Intent intent = new Intent(ActivityImageSelection.this, ServicesDatabase.class);
             //intent.putExtra("Function", "upload_image");
-            //intent.putExtra("image", imgPath.getPath());
-            //intent.putExtra("image", Tools.getBitmap(new File(imgPath.getPath())));
+            //intent.putExtra("image", bitmap);
             //startService(intent);
         }
     }
@@ -433,5 +446,7 @@ public class ActivityImageSelection extends AppCompatActivity {
 
         finish();
     }
+
+    public native void synEFFromJNI(long frame, long res);
 
 }
