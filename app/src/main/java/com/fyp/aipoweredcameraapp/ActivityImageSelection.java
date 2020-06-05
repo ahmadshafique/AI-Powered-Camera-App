@@ -1,10 +1,14 @@
 package com.fyp.aipoweredcameraapp;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -18,14 +22,17 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.fyp.aipoweredcameraapp.data.ServicesDatabase;
 import com.fyp.aipoweredcameraapp.data.SharedPref;
 import com.fyp.aipoweredcameraapp.utils.CallbackDialog;
 import com.fyp.aipoweredcameraapp.utils.DialogUtils;
 import com.fyp.aipoweredcameraapp.utils.NetworkCheck;
+import com.fyp.aipoweredcameraapp.utils.PermissionUtil;
 import com.fyp.aipoweredcameraapp.utils.Tools;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -40,7 +47,10 @@ import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 //import com.sun.imageio.plugins.jpeg.JPEG;
 //import java.util.*;
@@ -61,6 +71,16 @@ public class ActivityImageSelection extends AppCompatActivity {
 
     public static final int GET_FROM_GALLERY = 1;
 
+    static {
+        try {
+            System.loadLibrary("native-lib");
+
+        } catch (UnsatisfiedLinkError e) {
+            System.err.println("Native code library failed to load.\n" + e);
+            //System.exit(1);
+        }
+    }
+    //static { System.loadLibrary("native-lib"); }
     native void synEFFromJNI(Long frame, Long res);
 
     @Override
@@ -143,6 +163,8 @@ public class ActivityImageSelection extends AppCompatActivity {
         else {
             imgPath = Uri.parse(filePath);
             img.setImageURI(imgPath);
+            File imgFile = new File(filePath);
+            imgFile.deleteOnExit();
         }
         previousBtn.setText(R.string.RETAKE);
         previousBtn.setOnClickListener(new View.OnClickListener() {
@@ -197,11 +219,30 @@ public class ActivityImageSelection extends AppCompatActivity {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private void getFileSystemPermission() {
+        if (shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE))
+            PermissionUtil.showSystemDialogPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        else
+            PermissionUtil.goToPermissionSettingScreen(this);
+    }
+
     private void processImage() {
         //az modules
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
         String currentDateandTime = sdf.format(new Date());
+
+        if (!PermissionUtil.isGranted(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            Snackbar.make(rootView,"File write permission must be enabled", Snackbar.LENGTH_INDEFINITE).setAction("GRANT PERMISSION", new View.OnClickListener() {
+                @Override
+                @RequiresApi(api = Build.VERSION_CODES.M)
+                public void onClick(View v) {
+                    getFileSystemPermission();
+                }
+            }).show();
+            return;
+        }
 
         //String root = Environment.getExternalStorageDirectory().getPath();
         File folder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "CamAI");
@@ -216,35 +257,49 @@ public class ActivityImageSelection extends AppCompatActivity {
         val buf = ByteArray(bb.remaining());
         bb.get(buf);*/
 
-        Mat mat = new Mat();
+        ProgressDialog progressDialog = new ProgressDialog(ActivityImageSelection.this);
+        progressDialog.setTitle("Image Enhancement"); // Setting Title
+        progressDialog.setMessage("Processing..."); // Setting Message
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
+        progressDialog.show(); // Display Progress Dialog
+        progressDialog.setCancelable(false);
+
+        Runnable taskIE = () -> {
+            try {
+                Thread.sleep(10000);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            progressDialog.dismiss();
+        };
+
+        Executor ext = Executors.newSingleThreadExecutor();
+        ext.execute(taskIE);
+
+        Mat prev = new Mat();
         Bitmap imgBmp = Tools.getBitmap(new File(imgPath.getPath()));
-        Utils.bitmapToMat(imgBmp, mat);
+        Utils.bitmapToMat(imgBmp, prev);
         //Store the picture in mat object
 
         //Mat prev = Imgcodecs.imdecode(mat, Imgcodecs.IMREAD_UNCHANGED);
-        Mat prev = mat;
         Mat res = new Mat(prev.cols(), prev.rows(), CvType.CV_8UC3);
 
-        //Pass mat to native C++ function
-        synEFFromJNI(prev.dataAddr(), res.dataAddr());
+        //Pass mat to native C++ functions
+        //synEFFromJNI(prev.dataAddr(), res.dataAddr());
+
+        Log.d("done", "done");
 
         //AiCam image
         Bitmap img = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(res, img);
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        img.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-        byte[] data2 = stream.toByteArray();
+        ByteArrayOutputStream stream2 = new ByteArrayOutputStream();
+        img.compress(Bitmap.CompressFormat.JPEG, 100, stream2);
+        byte[] data2 = stream2.toByteArray();
 
         //Sample image
         ByteArrayOutputStream stream1 = new ByteArrayOutputStream();
         imgBmp.compress(Bitmap.CompressFormat.JPEG, 100, stream1);
         byte[] data1 = stream1.toByteArray();
-
-        /*
-        String[] arr = fileName.split("/");
-        arr[6] = "AICam" + arr[6];
-        String mPictureFileName2 = TextUtils.join("/", arr);
-        */
 
         try {
             FileOutputStream fos = new FileOutputStream(sampleFileName);
@@ -283,9 +338,18 @@ public class ActivityImageSelection extends AppCompatActivity {
         if (!NetworkCheck.isConnect(this)) {
             dialogNoInternet();
         } else {
-            //Intent intent = new Intent(ActivityFacialFeatures.this, ServicesDatabase.class);
+            int pos = 0;
+            ArrayList<String> images_list = new ArrayList<>();
+            images_list.add(imgPath.getPath());
+
+            Intent i = new Intent(ActivityImageSelection.this, ActivityFullScreenImage.class);
+            i.putExtra(ActivityFullScreenImage.EXTRA_POS, pos);
+            i.putStringArrayListExtra(ActivityFullScreenImage.EXTRA_IMGS, images_list);
+            startActivity(i);
+            //Intent intent = new Intent(ActivityImageSelection.this, ServicesDatabase.class);
             //intent.putExtra("Function", "upload_image");
-            //intent.putExtra("image", bitmap);
+            //intent.putExtra("image", imgPath.getPath());
+            //intent.putExtra("image", Tools.getBitmap(new File(imgPath.getPath())));
             //startService(intent);
         }
     }
@@ -326,7 +390,35 @@ public class ActivityImageSelection extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        /*if(!isChangingConfigurations()) {
+            deleteTempFiles(getCacheDir());
+        }*/
     }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if(!isChangingConfigurations()) {
+            deleteTempFiles(getCacheDir());
+        }
+    }
+
+    private boolean deleteTempFiles(File file) {
+        if (file.isDirectory()) {
+            File[] files = file.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isDirectory()) {
+                        deleteTempFiles(f);
+                    } else {
+                        f.delete();
+                    }
+                }
+            }
+        }
+        return file.delete();
+    }
+
 
     @Override
     public void onBackPressed() {

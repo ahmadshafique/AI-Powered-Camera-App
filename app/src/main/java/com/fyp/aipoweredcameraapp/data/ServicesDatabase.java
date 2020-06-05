@@ -17,7 +17,8 @@ public class ServicesDatabase extends Service {
     Activity activity;
 
     String functionPerformed = null;
-    Bitmap image = null;
+    String image = null;
+    //Bitmap image = null;
 
     @Nullable
     @Override
@@ -44,9 +45,9 @@ public class ServicesDatabase extends Service {
         try {
             functionPerformed = intent.getStringExtra("Function");
 
-
             if (functionPerformed != null && functionPerformed.equals("image_upload"))
-                image = (Bitmap) intent.getParcelableExtra("image");
+                image = intent.getStringExtra("image");
+                //image = (Bitmap) intent.getParcelableExtra("image");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -66,16 +67,10 @@ public class ServicesDatabase extends Service {
         @Override
         protected String doInBackground(Void... voids) {
             if (functionPerformed != null && functionPerformed.equals("image_upload")) {
-                final Intent intent = new Intent(".ActivityFullScreenImage");
+                final Intent intent = new Intent(".ActivityImageSelection");
                 if (image != null) {
-                    intent.putExtra("image", image);
-                    intent.putExtra("Result", true);
-
-                    //FULL SCREEN INTENT CALL
-//                    Intent i = new Intent(ActivityProductDetails.this, ActivityFullScreenImage.class);
-//                    i.putExtra(ActivityFullScreenImage.EXTRA_POS, pos);
-//                    i.putStringArrayListExtra(ActivityFullScreenImage.EXTRA_IMGS, images_list);
-//                    startActivity(i);
+                    //intent.putExtra("image", image);
+                    //intent.putExtra("Result", true);
                 }
                 else {
                     //if (task.getException() != null) {

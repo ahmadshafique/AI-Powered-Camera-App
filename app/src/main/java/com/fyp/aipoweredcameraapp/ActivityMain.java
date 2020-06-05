@@ -6,6 +6,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 
 import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -35,6 +36,7 @@ public class ActivityMain extends AppCompatActivity {
         sharedPref = new SharedPref(this);
         initToolbar();
         initComponent();
+        //this.getSharedPreferences("module_selected", Context.MODE_PRIVATE).edit().clear().apply();
     }
 
     private void initToolbar() {
@@ -69,7 +71,6 @@ public class ActivityMain extends AppCompatActivity {
         selfie_manipulation = (CardView) findViewById(R.id.selfie_manipulation);
         selfie_manipulation.setOnClickListener(cardOnClickListener());
     }
-
 
     public void dialogGetImage() {
             Dialog dialog = new DialogUtils(this).buildDialogSelection(R.string.title_get_image, R.string.msg_get_image, R.string.CAMERA, R.string.GALLERY, R.string.CLOSE, R.drawable.img_select_source, new CallbackDialog() {

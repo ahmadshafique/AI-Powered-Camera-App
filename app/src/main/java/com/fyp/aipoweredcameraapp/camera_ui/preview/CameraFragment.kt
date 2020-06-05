@@ -40,12 +40,6 @@ class CameraFragment : Fragment() {
         processCameraProviderFuture = ProcessCameraProvider.getInstance(requireContext())
     }
 
-    companion object {
-        init {
-            System.loadLibrary("native-lib")
-        }
-    }
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_camera, container, false)
     }
@@ -95,10 +89,9 @@ class CameraFragment : Fragment() {
         val metrics = DisplayMetrics().also { display.getMetrics(it) }
         val capture = ImageCapture.Builder()
                 .setTargetRotation(display.rotation)
-                //.setTargetResolution(Size(2000, 2000))
-                //.setFlashMode(ImageCapture.FLASH_MODE_OFF)
-                .setTargetResolution(Size(metrics.widthPixels, metrics.heightPixels))
-                .setFlashMode(ImageCapture.FLASH_MODE_AUTO)
+                .setTargetResolution(Size(1000, 1000))
+                //.setTargetResolution(Size(metrics.widthPixels, metrics.heightPixels))
+                .setFlashMode(ImageCapture.FLASH_MODE_OFF)
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
                 .build()
 
