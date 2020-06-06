@@ -4,7 +4,12 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -13,6 +18,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.IBinder;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.MenuItem;
@@ -41,9 +47,6 @@ import com.google.android.material.snackbar.Snackbar;
 import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
-import org.opencv.imgcodecs.Imgcodecs;
-import org.opencv.android.Utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,8 +55,11 @@ import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 //import com.sun.imageio.plugins.jpeg.JPEG;
 //import java.util.*;
@@ -67,25 +73,17 @@ public class ActivityImageSelection extends AppCompatActivity {
     private Button previousBtn;
     private Button nextBtn;
     private ImageView img;
+    private ProgressDialog progressDialog;
     private int module_selected;
     private String image_source;
     private Uri imgPath;
     private SharedPref sharedPref;
+    BroadcastReceiver broadcastReceiver;
+    ServicesDatabase servicesDatabase;
+    ServiceConnection serviceConnection;
 
     public static final int GET_FROM_GALLERY = 1;
 
-    /*static {
-        try {
-            System.loadLibrary("native-lib");
-
-        } catch (UnsatisfiedLinkError e) {
-            System.err.println("Native code library failed to load.\n" + e);
-            //System.exit(1);
-        }
-    }
-    //static { System.loadLibrary("native-lib"); }
-    native void synEFFromJNI(Long frame, Long res);
-*/
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,7 +97,9 @@ public class ActivityImageSelection extends AppCompatActivity {
         img = (ImageView) findViewById(R.id.loadImageView);
         previousBtn = (Button) findViewById(R.id.previous);
         nextBtn = (Button) findViewById(R.id.next);
+        progressDialog = new ProgressDialog(ActivityImageSelection.this);
 
+        checkService();
         initToolbar();
         if (image_source.equals("camera"))
             initCameraSource();
@@ -114,6 +114,26 @@ public class ActivityImageSelection extends AppCompatActivity {
             initSelfieManipulation();
 
         System.loadLibrary("native-lib");
+    }
+
+    public void checkService()
+    {
+        if(serviceConnection==null)
+        {
+            serviceConnection=new ServiceConnection() {
+                @Override
+                public void onServiceConnected(ComponentName name, IBinder service) {
+                    ServicesDatabase.MyServiceBinder myServiceBinder=(ServicesDatabase.MyServiceBinder)service;
+                    servicesDatabase=myServiceBinder.getService();
+                }
+                @Override
+                public void onServiceDisconnected(ComponentName name) {
+
+                }
+            };
+        }
+        Intent serviceIntent=new Intent(ActivityImageSelection.this, ServicesDatabase.class);
+        bindService(serviceIntent,serviceConnection, Context.BIND_AUTO_CREATE);
     }
 
     private void initEnhanceImage() {
@@ -166,10 +186,9 @@ public class ActivityImageSelection extends AppCompatActivity {
             }).show();
         else {
             imgPath = Uri.parse(filePath);
-            img.setImageURI(imgPath);
-            //img.setImageURI(Uri.parse(filePath));
+            //img.setImageURI(imgPath);
             Glide.with(img.getContext())
-                    .load(filePath)
+                    .load(imgPath.getPath())
                     .into(img);
         }
         previousBtn.setText(R.string.RETAKE);
@@ -177,7 +196,7 @@ public class ActivityImageSelection extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //delete previous temp file
-                File imgFile = new File(filePath);
+                File imgFile = new File(imgPath.getPath());
                 imgFile.delete();
 
                 Intent i = new Intent(ActivityImageSelection.this, ActivityCamera.class);
@@ -234,13 +253,10 @@ public class ActivityImageSelection extends AppCompatActivity {
     }
 
     private void processImage() {
-        //az modules
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-        String currentDateandTime = sdf.format(new Date());
-
+        //check file system permission
         if (!PermissionUtil.isGranted(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            Snackbar.make(rootView,"File write permission must be enabled", Snackbar.LENGTH_INDEFINITE).setAction("GRANT PERMISSION", new View.OnClickListener() {
+            Snackbar.make(rootView,"File write permission required", Snackbar.LENGTH_INDEFINITE).setAction("GRANT PERMISSION", new View.OnClickListener() {
                 @Override
                 @RequiresApi(api = Build.VERSION_CODES.M)
                 public void onClick(View v) {
@@ -256,80 +272,103 @@ public class ActivityImageSelection extends AppCompatActivity {
             folder.mkdirs();
         }
 
-        String sampleFileName = folder.getPath() + "/sample_picture_" + currentDateandTime + ".jpg";
-        String camAiFileName = folder.getPath() + "/CamAI_sample_picture_" + currentDateandTime + ".jpg";
 
-        /*val bb = image.planes[0].buffer;
-        val buf = ByteArray(bb.remaining());
-        bb.get(buf);*/
-
-        ProgressDialog progressDialog = new ProgressDialog(ActivityImageSelection.this);
         progressDialog.setTitle("Image Enhancement"); // Setting Title
         progressDialog.setMessage("Processing..."); // Setting Message
         progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
         progressDialog.show(); // Display Progress Dialog
         progressDialog.setCancelable(false);
 
+
+        Intent intent = new Intent(ActivityImageSelection.this, ServicesDatabase.class);
+        Bitmap smplImgBmp = ((BitmapDrawable)img.getDrawable()).getBitmap();
+
+        try {
+            //writing image files
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+            String currentDateandTime = sdf.format(new Date());
+            String sampleFileName = folder.getPath() + "/sample_picture_" + currentDateandTime + ".jpg";
+            String camAiFileName = folder.getPath() + "/CamAI_sample_picture_" + currentDateandTime + ".jpg";
+
+            ByteArrayOutputStream stream1 = new ByteArrayOutputStream();
+            smplImgBmp.compress(Bitmap.CompressFormat.JPEG, 100, stream1);
+            byte[] data1 = stream1.toByteArray();
+            FileOutputStream fos1 = new FileOutputStream(sampleFileName);
+            fos1.write(data1);
+            fos1.close();
+
+            intent.putExtra("Function", "enhance_image");
+            intent.putExtra("image", sampleFileName);
+            intent.putExtra("save_path", camAiFileName);
+            startService(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        /*CountDownLatch latch = new CountDownLatch(1);
         Runnable taskIE = () -> {
             try {
-                Thread.sleep(10000);
+                //Sample image
+                //Store the picture in mat object
+                Mat prev = new Mat();
+                Bitmap sampleImgBmp = ((BitmapDrawable)img.getDrawable()).getBitmap();
+                Utils.bitmapToMat(sampleImgBmp, prev);
+                ByteArrayOutputStream stream1 = new ByteArrayOutputStream();
+                sampleImgBmp.compress(Bitmap.CompressFormat.JPEG, 100, stream1);
+                byte[] data1 = stream1.toByteArray();
+                Mat res = new Mat(prev.cols(), prev.rows(), CvType.CV_8UC3);
+
+                //Pass mat to native C++ function
+                synEFFromJNI(prev.getNativeObjAddr(), res.getNativeObjAddr());
+
+                //AiCam image
+                Bitmap aicamImgBmp = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888);
+                Utils.matToBitmap(res, aicamImgBmp);
+                ByteArrayOutputStream stream2 = new ByteArrayOutputStream();
+                aicamImgBmp.compress(Bitmap.CompressFormat.JPEG, 100, stream2);
+                byte[] data2 = stream2.toByteArray();
+
+
+                //writing image files
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+                String currentDateandTime = sdf.format(new Date());
+                String sampleFileName = folder.getPath() + "/sample_picture_" + currentDateandTime + ".jpg";
+                String camAiFileName = folder.getPath() + "/CamAI_sample_picture_" + currentDateandTime + ".jpg";
+
+                FileOutputStream fos1 = new FileOutputStream(sampleFileName);
+                fos1.write(data1);
+                fos1.close();
+                FileOutputStream fos2 = new FileOutputStream(camAiFileName);
+                fos2.write(data2);
+                fos2.close();
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            progressDialog.dismiss();
+
+            //latch.countDown();
+            //previousBtn.performClick();
         };
+        progressDialog.dismiss();
 
-        Executor ext = Executors.newSingleThreadExecutor();
-        ext.execute(taskIE);
-
-        Mat prev = new Mat();
-        Bitmap imgBmp = Tools.getBitmap(new File(imgPath.getPath()));
-        Utils.bitmapToMat(imgBmp, prev);
-        //Store the picture in mat object
-
-        //Mat prev = Imgcodecs.imdecode(mat, Imgcodecs.IMREAD_UNCHANGED);
-        Bitmap bitmap = ((BitmapDrawable)img.getDrawable()).getBitmap();
-        Mat prev = new Mat();
-        Utils.bitmapToMat(bitmap, prev);
-        Mat res = new Mat(prev.cols(), prev.rows(), CvType.CV_8UC3);
-        synEFFromJNI(prev.getNativeObjAddr(), res.getNativeObjAddr());
-
-        //Pass mat to native C++ function
-
-        //AiCam image
-        Bitmap img = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(res, img);
-        ByteArrayOutputStream stream2 = new ByteArrayOutputStream();
-        img.compress(Bitmap.CompressFormat.JPEG, 100, stream2);
-        byte[] data2 = stream2.toByteArray();
-
-        //Sample image
-        ByteArrayOutputStream stream1 = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream1);
-        byte[] data1 = stream1.toByteArray();
-
-        /*
-        String[] arr = fileName.split("/");
-        arr[6] = "AICam" + arr[6];
-        String mPictureFileName2 = TextUtils.join("/", arr);
-        */
-
+        //Executor ext = Executors.newSingleThreadExecutor();
+        ExecutorService extServoce = Executors.newSingleThreadExecutor();
+        extServoce.execute(taskIE);
         try {
-            FileOutputStream fos = new FileOutputStream(sampleFileName);
-            fos.write(data1);
-            fos.close();
-
-            FileOutputStream fos2 = new FileOutputStream(camAiFileName);
-            fos2.write(data2);
-            fos2.close();
-
-            String msg = "Photo capture succeeded at" + folder.getAbsolutePath();
-            Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
-        } catch (IOException e) {
-            Log.e("CameraFragment", "Exception in photoCallback", e);
+            extServoce.awaitTermination(30, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        previousBtn.performClick();
+        String msg = "Photo capture succeeded at" ;//+ folder.getAbsolutePath();
+        Toast.makeText(rootView.getContext(), msg, Toast.LENGTH_LONG).show();
+        ext.execute(taskIE);
+        try {
+            latch.await();
+            String msg = "Photo capture succeeded at" ;//+ folder.getAbsolutePath();
+            Toast.makeText(rootView.getContext(), msg, Toast.LENGTH_LONG).show();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }*/
     }
 
     public void dialogNoInternet() {
@@ -352,14 +391,14 @@ public class ActivityImageSelection extends AppCompatActivity {
         if (!NetworkCheck.isConnect(this)) {
             dialogNoInternet();
         } else {
-            int pos = 0;
+            /*int pos = 0;
             ArrayList<String> images_list = new ArrayList<>();
             images_list.add(imgPath.getPath());
 
             Intent i = new Intent(ActivityImageSelection.this, ActivityFullScreenImage.class);
             i.putExtra(ActivityFullScreenImage.EXTRA_POS, pos);
             i.putStringArrayListExtra(ActivityFullScreenImage.EXTRA_IMGS, images_list);
-            startActivity(i);
+            startActivity(i);*/
             //Intent intent = new Intent(ActivityImageSelection.this, ServicesDatabase.class);
             //intent.putExtra("Function", "upload_image");
             //intent.putExtra("image", bitmap);
@@ -393,7 +432,60 @@ public class ActivityImageSelection extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
+        IntentFilter i=new IntentFilter(".ActivityImageSection");
+        broadcastReceiver=new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String function=intent.getStringExtra("Function");
+                Toast.makeText(rootView.getContext(), function, Toast.LENGTH_LONG).show();
+                boolean result=intent.getBooleanExtra("Result",false);
+                if(function.equals("functionPerformed")) {
+                    if (result) {
+                        unbindService(serviceConnection);
+                        servicesDatabase.StopService();
+
+                        //Bitmap aicamImgBmp =  (Bitmap) intent.getParcelableExtra("image");
+                        String aicamImg = intent.getStringExtra("image");
+                        //img.setImageURI(imgPath);
+                        Glide.with(img.getContext())
+                                .load(aicamImg)
+                                .into(img);
+
+                        progressDialog.dismiss();
+                        String msg = "Photo capture succeeded at";//+ folder.getAbsolutePath();
+                        Toast.makeText(rootView.getContext(), msg, Toast.LENGTH_LONG).show();
+
+                        //dialogSuccess();
+                    } else {
+                        Toast.makeText(ActivityImageSelection.this, "Error Occured in enhance image. Please try again", Toast.LENGTH_LONG).show();
+                    }
+                }
+            }
+        };
+        this.registerReceiver(broadcastReceiver,i);
     }
+
+    /*public void dialogSuccess(String code) {
+        progressDialog.dismiss();
+        Dialog dialog = new DialogUtils(this).buildDialogInfo(
+                getString(R.string.success_checkout),
+                String.format(getString(R.string.msg_success_checkout), code),
+                getString(R.string.OK),
+                R.drawable.img_checkout_success,
+                new CallbackDialog() {
+                    @Override
+                    public void onPositiveClick(Dialog dialog) {
+                        finish();
+                        dialog.dismiss();
+                    }
+
+                    @Override
+                    public void onNegativeClick(Dialog dialog) {
+                    }
+                });
+        dialog.show();
+    }*/
 
     @Override
     public void onStart() {

@@ -4,11 +4,24 @@ import android.app.Activity;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
 
 import androidx.annotation.Nullable;
+
+import com.fyp.aipoweredcameraapp.utils.Tools;
+
+import org.opencv.android.Utils;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class ServicesDatabase extends Service {
 
@@ -30,7 +43,9 @@ public class ServicesDatabase extends Service {
         super.onDestroy();
     }
 
-    public void onCreate() {    }
+    public void onCreate() {
+        System.loadLibrary("native-lib");
+    }
 
     public class MyServiceBinder extends Binder {
         public ServicesDatabase getService() {
@@ -45,9 +60,9 @@ public class ServicesDatabase extends Service {
         try {
             functionPerformed = intent.getStringExtra("Function");
 
-            if (functionPerformed != null && functionPerformed.equals("image_upload"))
-                image = intent.getStringExtra("image");
-                //image = (Bitmap) intent.getParcelableExtra("image");
+            //if (functionPerformed != null && functionPerformed.equals("image_upload"))
+                //image = intent.getStringExtra("image");
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -66,15 +81,44 @@ public class ServicesDatabase extends Service {
 
         @Override
         protected String doInBackground(Void... voids) {
-            if (functionPerformed != null && functionPerformed.equals("image_upload")) {
-                final Intent intent = new Intent(".ActivityImageSelection");
+            if (functionPerformed != null && functionPerformed.equals("enhance_image")) {
+                final Intent intent = new Intent(".ActivityImageSection");
+                //image = (Bitmap) intent.getParcelableExtra("image");
+                image = (String) intent.getStringExtra("image");
                 if (image != null) {
-                    //intent.putExtra("image", image);
-                    //intent.putExtra("Result", true);
+                    //Sample image
+                    //Store the picture in mat object
+                    Mat prev = new Mat();
+                    Bitmap sampleImgBmp = Tools.getBitmap(new File((image)));
+                    Utils.bitmapToMat(sampleImgBmp, prev);
+                    Mat res = new Mat(prev.cols(), prev.rows(), CvType.CV_8UC3);
+
+                    //Pass mat to native C++ function
+                    synEFFromJNI(prev.getNativeObjAddr(), res.getNativeObjAddr());
+
+                    //AiCam image
+                    Bitmap aicamImgBmp = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888);
+                    Utils.matToBitmap(res, aicamImgBmp);
+
+                    String savePath=intent.getStringExtra("save_path");
+                    ByteArrayOutputStream stream2 = new ByteArrayOutputStream();
+                    aicamImgBmp.compress(Bitmap.CompressFormat.JPEG, 100, stream2);
+                    byte[] data2 = stream2.toByteArray();
+                    try {
+                        FileOutputStream fos2 = new FileOutputStream(savePath);
+                        fos2.write(data2);
+                        fos2.close();
+
+                        intent.putExtra("Function", "functionPerformed");
+                        intent.putExtra("Result", true);
+                        intent.putExtra("image", savePath);
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
                 else {
-                    //if (task.getException() != null) {
-                    //intent.putExtra("Error", task.getException().getMessage());
+                    intent.putExtra("Function", functionPerformed);
                     intent.putExtra("Result", false);
                 }
                 sendBroadcast(intent);
@@ -90,4 +134,7 @@ public class ServicesDatabase extends Service {
             super.onPostExecute(values);
         }
     }
+
+    public native void synEFFromJNI(long frame, long res);
+
 }

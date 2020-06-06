@@ -1,11 +1,7 @@
 package com.fyp.aipoweredcameraapp.camera_ui.preview
 
-import android.app.Activity
 import android.content.Intent
-import android.graphics.Bitmap
 import android.os.Bundle
-import android.os.Environment
-import android.text.TextUtils
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Size
@@ -26,18 +22,6 @@ import java.io.File
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import androidx.camera.core.ImageCapture
-//import com.sun.imageio.plugins.jpeg.JPEG
-import org.opencv.core.CvType
-import org.opencv.core.Mat
-import org.opencv.imgcodecs.Imgcodecs
-import org.opencv.core.MatOfByte
-import androidx.camera.core.ImageProxy
-import org.opencv.android.Utils
-import java.io.ByteArrayOutputStream
-import java.io.FileOutputStream
-import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.*
 
 
 class CameraFragment : Fragment() {
@@ -53,12 +37,6 @@ class CameraFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         processCameraProviderFuture = ProcessCameraProvider.getInstance(requireContext())
-    }
-
-    companion object {
-        init {
-            System.loadLibrary("native-lib")
-        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -168,7 +146,6 @@ class CameraFragment : Fragment() {
                 })
         return analysis
     }
-
      */
 
     private fun setupTapFunctions(cameraControl: CameraControl) {
@@ -211,7 +188,5 @@ class CameraFragment : Fragment() {
         else
             lensFacing = CameraSelector.DEFAULT_BACK_CAMERA
     }
-
-    external fun synEFFromJNI(frame: Long, res: Long): Long
 
 }
