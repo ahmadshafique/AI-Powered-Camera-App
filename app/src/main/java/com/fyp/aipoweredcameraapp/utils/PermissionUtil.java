@@ -8,8 +8,13 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
+import android.view.View;
+
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,4 +82,27 @@ public abstract class PermissionUtil {
     public static void showSystemDialogPermission(Activity act, String perm, int code) {
         act.requestPermissions(new String[]{perm}, code);
     }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    public static void getPermission(Activity act, String perm) {
+        if (act.shouldShowRequestPermissionRationale(perm))
+            showSystemDialogPermission(act, perm);
+        else
+            goToPermissionSettingScreen(act);
+    }
+
+    public static boolean checkPermission(Activity act, View v, String perm, String rationale) {
+        if (!PermissionUtil.isGranted(act, perm)) {
+            Snackbar.make(v, rationale, Snackbar.LENGTH_INDEFINITE).setAction("GRANT", new View.OnClickListener() {
+                @Override
+                @RequiresApi(api = Build.VERSION_CODES.M)
+                public void onClick(View v) {
+                    PermissionUtil.getPermission(act, perm);
+                }
+            }).show();
+            return false;
+        }
+        return true;
+    }
+
 }

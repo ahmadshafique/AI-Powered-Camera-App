@@ -23,18 +23,20 @@
         tools:ignore="AllowBackup,GoogleAppIndexingWarning">
 
         <!-- List Of Activity Class -->
-        <activity android:name=".ActivitySplash">
+        <activity android:name=".ActivitySplash"
+            android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ActivityMain" />
+        <activity android:name=".ActivityMain"
+            android:screenOrientation="portrait" />
         <activity android:name=".ActivityCamera" />
-        <activity android:name=".ActivityImageSelection" />
-        <activity android:name=".ActivityFullScreenImage" />
-
-        <service android:name=".data.ServicesDatabase" />
+        <activity android:name=".ActivityImage"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ActivityFullScreenImage"
+            android:screenOrientation="portrait"/>
 
     </application>
 

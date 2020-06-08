@@ -17,6 +17,8 @@ import com.fyp.aipoweredcameraapp.utils.CallbackDialog;
 import com.fyp.aipoweredcameraapp.utils.DialogUtils;
 import com.fyp.aipoweredcameraapp.utils.Tools;
 
+import java.io.File;
+
 public class ActivityMain extends AppCompatActivity {
 
     private ActionBar actionBar;
@@ -35,6 +37,13 @@ public class ActivityMain extends AppCompatActivity {
         sharedPref = new SharedPref(this);
         initToolbar();
         initComponent();
+        //this.getSharedPreferences("module_selected", Context.MODE_PRIVATE).edit().clear().apply();
+        //delete temp file
+        String filePath = new SharedPref(this).getStringPref("temp_file");
+        if (filePath != null) {
+            File imgFile = new File(filePath);
+            imgFile.delete();
+        }
     }
 
     private void initToolbar() {
@@ -56,7 +65,7 @@ public class ActivityMain extends AppCompatActivity {
 
     private View.OnClickListener cardOnClickListener() {
         return v -> {
-            sharedPref.setPref("module_selected", v.getId());
+            sharedPref.setIntPref("module_selected", v.getId());
             dialogGetImage();
         };
     }
@@ -69,7 +78,6 @@ public class ActivityMain extends AppCompatActivity {
         selfie_manipulation = (CardView) findViewById(R.id.selfie_manipulation);
         selfie_manipulation.setOnClickListener(cardOnClickListener());
     }
-
 
     public void dialogGetImage() {
             Dialog dialog = new DialogUtils(this).buildDialogSelection(R.string.title_get_image, R.string.msg_get_image, R.string.CAMERA, R.string.GALLERY, R.string.CLOSE, R.drawable.img_select_source, new CallbackDialog() {
@@ -87,7 +95,7 @@ public class ActivityMain extends AppCompatActivity {
             public void onNegativeClick(Dialog dialog) {
                 //gallery source
                 dialog.dismiss();
-                Intent i = new Intent(ActivityMain.this, ActivityImageSelection.class);
+                Intent i = new Intent(ActivityMain.this, ActivityImage.class);
                 i.putExtra("image_source", "gallery");
                 startActivity(i);
 
