@@ -26,7 +26,7 @@
         android:layout_gravity="center_horizontal"
         android:layout_weight="0.1"
         style="@style/TextAppearance.AppCompat.Headline"
-        android:textColor="@color/colorPrimary"
+        android:textColor="@color/grey_80"
         android:textStyle="bold"
         android:text="@string/app_name" />
 

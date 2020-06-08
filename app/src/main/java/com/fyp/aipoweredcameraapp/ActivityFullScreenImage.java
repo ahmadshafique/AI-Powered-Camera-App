@@ -1,6 +1,7 @@
 package com.fyp.aipoweredcameraapp;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
@@ -12,6 +13,7 @@ import androidx.viewpager.widget.ViewPager;
 import com.fyp.aipoweredcameraapp.adapter.AdapterFullScreenImage;
 import com.fyp.aipoweredcameraapp.utils.Tools;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class ActivityFullScreenImage extends AppCompatActivity {
@@ -30,16 +32,18 @@ public class ActivityFullScreenImage extends AppCompatActivity {
         viewPager = (ViewPager) findViewById(R.id.pager);
         text_page = (TextView) findViewById(R.id.text_page);
 
-        ArrayList<String> items = new ArrayList<>();
         Intent i = getIntent();
         final int position = i.getIntExtra(EXTRA_POS, 0);
+        ArrayList<String> items = new ArrayList<>();
         items = i.getStringArrayListExtra(EXTRA_IMGS);
         adapter = new AdapterFullScreenImage(ActivityFullScreenImage.this, items);
-        final int total = adapter.getCount();
+
+        if(position<1)
+            text_page.setText(String.format(getString(R.string.image_original)));
+        else
+            text_page.setText(String.format(getString(R.string.image_processed)));
+
         viewPager.setAdapter(adapter);
-
-        text_page.setText(String.format(getString(R.string.image_processed)));
-
         // displaying selected image first
         viewPager.setCurrentItem(position);
         viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
@@ -62,7 +66,6 @@ public class ActivityFullScreenImage extends AppCompatActivity {
             }
         });
 
-
         ((ImageButton) findViewById(R.id.btnClose)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -74,13 +77,11 @@ public class ActivityFullScreenImage extends AppCompatActivity {
         Tools.systemBarLolipop(this);
     }
 
-
     @Override
     public void onBackPressed() {
         super.onBackPressed();
         finish();
     }
-
 
 }
 

@@ -60,6 +60,7 @@
     <string name="NO_IMAGE">NO IMAGE</string>
     <string name="OPEN">OPEN</string>
     <string name="SAVE">SAVE</string>
+    <string name="DISCARD">DISCARD</string>
     <string name="PREVIOUS">PREVIOUS</string>
     <string name="BACK">BACK</string>
     <string name="NEXT">NEXT</string>

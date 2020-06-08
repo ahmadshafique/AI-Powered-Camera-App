@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:fitsSystemWindows="false">
 
-    <com.app.darultohfa.widget.TouchImageView
+    <com.fyp.aipoweredcameraapp.widget.TouchImageView
         android:id="@+id/imgDisplay"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"

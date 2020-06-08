@@ -6,7 +6,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 
 import android.app.Dialog;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -17,6 +16,8 @@ import com.fyp.aipoweredcameraapp.data.SharedPref;
 import com.fyp.aipoweredcameraapp.utils.CallbackDialog;
 import com.fyp.aipoweredcameraapp.utils.DialogUtils;
 import com.fyp.aipoweredcameraapp.utils.Tools;
+
+import java.io.File;
 
 public class ActivityMain extends AppCompatActivity {
 
@@ -37,6 +38,12 @@ public class ActivityMain extends AppCompatActivity {
         initToolbar();
         initComponent();
         //this.getSharedPreferences("module_selected", Context.MODE_PRIVATE).edit().clear().apply();
+        //delete temp file
+        String filePath = new SharedPref(this).getStringPref("temp_file");
+        if (filePath != null) {
+            File imgFile = new File(filePath);
+            imgFile.delete();
+        }
     }
 
     private void initToolbar() {
@@ -58,7 +65,7 @@ public class ActivityMain extends AppCompatActivity {
 
     private View.OnClickListener cardOnClickListener() {
         return v -> {
-            sharedPref.setPref("module_selected", v.getId());
+            sharedPref.setIntPref("module_selected", v.getId());
             dialogGetImage();
         };
     }
@@ -88,7 +95,7 @@ public class ActivityMain extends AppCompatActivity {
             public void onNegativeClick(Dialog dialog) {
                 //gallery source
                 dialog.dismiss();
-                Intent i = new Intent(ActivityMain.this, ActivityImageSelection.class);
+                Intent i = new Intent(ActivityMain.this, ActivityImage.class);
                 i.putExtra("image_source", "gallery");
                 startActivity(i);
 

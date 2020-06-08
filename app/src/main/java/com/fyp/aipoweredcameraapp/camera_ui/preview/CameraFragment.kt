@@ -7,13 +7,12 @@ import android.util.Log
 import android.util.Size
 import android.view.*
 import android.widget.Toast
-import androidx.annotation.Nullable
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.TextureViewMeteringPointFactory
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import com.fyp.aipoweredcameraapp.ActivityImageSelection
+import com.fyp.aipoweredcameraapp.ActivityImage
 import com.google.common.util.concurrent.ListenableFuture
 import com.fyp.aipoweredcameraapp.R
 import com.fyp.aipoweredcameraapp.camera_ui.preview.FileCreator.JPEG_FORMAT
@@ -87,15 +86,17 @@ class CameraFragment : Fragment() {
         val display = viewFinder.display
         val metrics = DisplayMetrics().also { display.getMetrics(it) }
         val capture = ImageCapture.Builder()
-                .setTargetRotation(display.rotation)
-                .setTargetResolution(Size(1000, 1000))
-                //.setTargetResolution(Size(metrics.widthPixels, metrics.heightPixels))
+                //.setTargetRotation(display.rotation)
+                //.setTargetResolution(Size(1000, 1000))
+                .setTargetResolution(Size(metrics.widthPixels, metrics.heightPixels))
                 .setFlashMode(ImageCapture.FLASH_MODE_OFF)
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
                 .build()
 
         val executor = Executors.newSingleThreadExecutor()
         cameraCaptureImageButton.setOnClickListener {
+
+            Toast.makeText(context, "Capturing image..please keep camera steady", Toast.LENGTH_LONG).show();
 
             // Setup image capture metadata
             val metadata = ImageCapture.Metadata().apply {
@@ -110,7 +111,7 @@ class CameraFragment : Fragment() {
                     object : ImageCapture.OnImageSavedCallback {
                         override fun onImageSaved(file: File) {
 
-                            val intent = Intent(requireContext(), ActivityImageSelection::class.java)
+                            val intent = Intent(requireContext(), ActivityImage::class.java)
                             intent.putExtra("image_source", "camera")
                             intent.putExtra("filePath", file.absolutePath)
                             startActivity(intent)

@@ -46,10 +46,16 @@ public class SharedPref {
      * @param value
      */
 
-    public void setPref(String key, int value) {
+    public void setIntPref(String key, int value) {
         sharedPreferences.edit().putInt(key, value).apply();
     }
 
-    public int getPref(String key) { return sharedPreferences.getInt(key, -1); }
+    public int getIntPref(String key) { return sharedPreferences.getInt(key, -1); }
+
+    public void setStringPref(String key, String value) {
+        sharedPreferences.edit().putString(key, value).apply();
+    }
+
+    public String getStringPref(String key) { return sharedPreferences.getString(key, null); }
 
 }

@@ -12,35 +12,46 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
-    <ImageView
+    <com.fyp.aipoweredcameraapp.widget.TouchImageView
         android:id="@+id/loadImageView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="0.8"
+        android:scaleType="fitXY"
+        android:adjustViewBounds="true"
         app:srcCompat="@drawable/loading_placeholder" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_medium"
         android:orientation="horizontal">
 
         <Button
             android:id="@+id/previous"
+            style="@style/Base.Widget.AppCompat.Button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginLeft="@dimen/spacing_middle"
+            android:layout_marginRight="@dimen/spacing_middle"
             android:layout_marginBottom="@dimen/spacing_mlarge"
             android:layout_gravity="center_horizontal"
-            android:text="@string/PREVIOUS" />
+            android:text="@string/PREVIOUS"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/next"
+            style="@style/Base.Widget.AppCompat.Button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginLeft="@dimen/spacing_middle"
+            android:layout_marginRight="@dimen/spacing_middle"
             android:layout_marginBottom="@dimen/spacing_mlarge"
             android:layout_gravity="center_horizontal"
-            android:text="@string/NEXT" />
+            android:text="@string/NEXT"
+            android:textStyle="bold" />
 
     </LinearLayout>
 
