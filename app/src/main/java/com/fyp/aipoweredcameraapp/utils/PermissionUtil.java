@@ -3,6 +3,7 @@ package com.fyp.aipoweredcameraapp.utils;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -17,6 +18,7 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 
 public abstract class PermissionUtil {
@@ -93,7 +95,7 @@ public abstract class PermissionUtil {
 
     public static boolean checkPermission(Activity act, View v, String perm, String rationale) {
         if (!PermissionUtil.isGranted(act, perm)) {
-            Snackbar.make(v, rationale, Snackbar.LENGTH_INDEFINITE).setAction("GRANT", new View.OnClickListener() {
+            Snackbar.make(v, rationale, Snackbar.LENGTH_LONG).setAction("GRANT", new View.OnClickListener() {
                 @Override
                 @RequiresApi(api = Build.VERSION_CODES.M)
                 public void onClick(View v) {

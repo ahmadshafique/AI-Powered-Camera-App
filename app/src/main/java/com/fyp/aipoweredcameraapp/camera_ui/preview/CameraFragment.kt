@@ -96,7 +96,7 @@ class CameraFragment : Fragment() {
         val executor = Executors.newSingleThreadExecutor()
         cameraCaptureImageButton.setOnClickListener {
 
-            Toast.makeText(context, "Capturing image..please keep camera steady", Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "Capturing image...keep camera steady !!", Toast.LENGTH_LONG).show();
 
             // Setup image capture metadata
             val metadata = ImageCapture.Metadata().apply {

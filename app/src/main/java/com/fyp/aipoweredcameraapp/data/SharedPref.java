@@ -50,7 +50,7 @@ public class SharedPref {
         sharedPreferences.edit().putInt(key, value).apply();
     }
 
-    public int getIntPref(String key) { return sharedPreferences.getInt(key, -1); }
+    public int getIntPref(String key) { return sharedPreferences.getInt(key, 0); }
 
     public void setStringPref(String key, String value) {
         sharedPreferences.edit().putString(key, value).apply();

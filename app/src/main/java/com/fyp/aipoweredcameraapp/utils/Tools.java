@@ -8,28 +8,30 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.provider.Settings;
-import android.util.DisplayMetrics;
-import android.view.Display;
-import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.ImageView;
-
-import androidx.annotation.ColorRes;
-import androidx.core.graphics.drawable.DrawableCompat;
+import android.widget.Toast;
 
 import com.fyp.aipoweredcameraapp.R;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.fyp.aipoweredcameraapp.data.SharedPref;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -81,7 +83,7 @@ public class Tools {
     }
 
     public static void showDialogAbout(Activity activity) {
-        Dialog dialog = new DialogUtils(activity).buildDialogInfo(R.string.title_about, R.string.content_about, R.string.OK, R.drawable.img_about, new CallbackDialog() {
+        Dialog dialog = new DialogUtils(activity).buildDialogInfo(R.string.title_about, R.string.content_about, R.string.OK, R.drawable.img_about, new CallbackDialog2Buttons() {
             @Override
             public void onPositiveClick(Dialog dialog) {
                 dialog.dismiss();
@@ -202,4 +204,127 @@ public class Tools {
         return deviceID;
     }
 
+    public static void saveImage(Context context, Bitmap sampleImgBmp, Bitmap aicamImgBmp, String imageSource) {
+
+        //String root = Environment.getExternalStorageDirectory().getPath();
+        File baseFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "CamAI");
+        if(!baseFolder.exists()){
+            baseFolder.mkdirs();
+        }
+
+        //writing image files
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+        String currentDateandTime = sdf.format(new Date());
+
+        if (imageSource.equals("camera")) {
+            String sampleFileName = baseFolder.getPath() + "/sample_picture_" + currentDateandTime + ".jpg";
+            ByteArrayOutputStream stream1 = new ByteArrayOutputStream();
+            sampleImgBmp.compress(Bitmap.CompressFormat.JPEG, 100, stream1);
+            byte[] data1 = stream1.toByteArray();
+            try {
+                FileOutputStream fos1 = new FileOutputStream(sampleFileName);
+                fos1.write(data1);
+                fos1.close();
+                MediaScannerConnection.scanFile(context, new String[] { sampleFileName }, null, null);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        String camAiFileName = baseFolder.getPath() + "/camAI_picture_" + currentDateandTime + ".jpg";
+        ByteArrayOutputStream stream2 = new ByteArrayOutputStream();
+        aicamImgBmp.compress(Bitmap.CompressFormat.JPEG, 100, stream2);
+        byte[] data2 = stream2.toByteArray();
+        try {
+            FileOutputStream fos2 = new FileOutputStream(camAiFileName);
+            fos2.write(data2);
+            fos2.close();
+            MediaScannerConnection.scanFile(context, new String[] { camAiFileName }, null, null);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (imageSource.equals("camera")) {
+            String msg = "Both Photos saved at " + baseFolder.getAbsolutePath();
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+        } else {
+            String msg = "CamAI Photo saved at " + baseFolder.getAbsolutePath();
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public static File BitMapTempFile(Context context, Bitmap bitmap) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        byte[] b = baos.toByteArray();
+        File f = null;
+        try {
+            f = File.createTempFile("img_temp", ".jpg", context.getCacheDir());
+            FileOutputStream fos = new FileOutputStream(f);
+            fos.write(b);
+            fos.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return f;
+    }
+
+    public static String getRealPathFromURI(Context context, Uri contentURI) {
+        String result;
+        Cursor cursor = context.getContentResolver().query(contentURI, null, null, null, null);
+        if (cursor == null) { // Source is Dropbox or other similar local file path
+            result = contentURI.getPath();
+        } else {
+            cursor.moveToFirst();
+            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+            result = cursor.getString(idx);
+            cursor.close();
+        }
+        return result;
+    }
+
+    public static boolean validateSelfieManipulationParameters (Context context, Dialog dialog, SharedPref sharedPref) {
+        EditText sm_edt1 = (EditText) dialog.findViewById(R.id.edt_sm1);
+        EditText sm_edt2 = (EditText) dialog.findViewById(R.id.edt_sm2);
+        EditText sm_edt3 = (EditText) dialog.findViewById(R.id.edt_sm3);
+        if (sm_edt1.getText().toString().isEmpty()) {
+            sm_edt1.requestFocus();
+            Toast.makeText(context, "Field can not be empty", Toast.LENGTH_SHORT).show();
+            return false;
+        } else if ( Integer.valueOf(sm_edt1.getText().toString()) < -50 || Integer.valueOf(sm_edt1.getText().toString()) > 50 ) {
+            sm_edt1.requestFocus();
+            Toast.makeText(context, "Value must be between -50 to 50", Toast.LENGTH_SHORT).show();
+            return false;
+        } else if (sm_edt2.getText().toString().isEmpty()) {
+            sm_edt2.requestFocus();
+            Toast.makeText(context, "Field can not be empty", Toast.LENGTH_SHORT).show();
+            return false;
+        } else if ( Integer.valueOf(sm_edt2.getText().toString()) < -50 || Integer.valueOf(sm_edt2.getText().toString()) > 50 ) {
+            sm_edt2.requestFocus();
+            Toast.makeText(context, "Value must be between -50 to 50", Toast.LENGTH_SHORT).show();
+            return false;
+        } else if (sm_edt3.getText().toString().isEmpty()) {
+            sm_edt3.requestFocus();
+            Toast.makeText(context, "Field can not be empty", Toast.LENGTH_SHORT).show();
+            return false;
+        } else if ( Integer.valueOf(sm_edt3.getText().toString()) < 200 || Integer.valueOf(sm_edt3.getText().toString()) > 500 ) {
+            sm_edt3.requestFocus();
+            Toast.makeText(context, "Value must be between 200 to 500", Toast.LENGTH_SHORT).show();
+            return false;
+        } else if ( Integer.valueOf(sm_edt1.getText().toString()) == 0 & Integer.valueOf(sm_edt2.getText().toString()) == 0 & Integer.valueOf(sm_edt3.getText().toString()) == 0 ) {
+            sm_edt1.requestFocus();
+            Toast.makeText(context, "All fields can not be zero", Toast.LENGTH_SHORT).show();
+            return false;
+        } else {
+            int x = sharedPref.getIntPref("x");
+            int y = sharedPref.getIntPref("y");
+            int z = sharedPref.getIntPref("z");
+            if (Integer.valueOf(sm_edt1.getText().toString()) == x & Integer.valueOf(sm_edt3.getText().toString()) == y & Integer.valueOf(sm_edt3.getText().toString()) == z) {
+                sm_edt1.requestFocus();
+                Toast.makeText(context, "None of the parameters have changed", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        }
+        return true;
+    }
 }

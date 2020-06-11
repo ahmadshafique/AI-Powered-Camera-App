@@ -7,15 +7,14 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
-import android.media.MediaScannerConnection;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -25,10 +24,12 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.bumptech.glide.Glide;
 import com.fyp.aipoweredcameraapp.data.SharedPref;
-import com.fyp.aipoweredcameraapp.utils.CallbackDialog;
+import com.fyp.aipoweredcameraapp.utils.CallbackDialog2Buttons;
+import com.fyp.aipoweredcameraapp.utils.CallbackDialog4Buttons;
 import com.fyp.aipoweredcameraapp.utils.DialogUtils;
 import com.fyp.aipoweredcameraapp.utils.NetworkCheck;
 import com.fyp.aipoweredcameraapp.utils.PermissionUtil;
+import com.fyp.aipoweredcameraapp.utils.Tools;
 import com.fyp.aipoweredcameraapp.widget.TouchImageView;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -36,16 +37,11 @@ import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
 import com.loopj.android.http.*;
-
 import cz.msebera.android.httpclient.Header;
 
 public class ActivityImage extends AppCompatActivity {
@@ -56,6 +52,7 @@ public class ActivityImage extends AppCompatActivity {
     private Button previousBtn;
     private Button nextBtn;
     private ImageView img;
+    private ProgressDialog progressDialog;
     private int module_selected;
     private String image_source;
     private SharedPref sharedPref;
@@ -75,6 +72,9 @@ public class ActivityImage extends AppCompatActivity {
         image_source = getIntent().getStringExtra("image_source");
         previousBtn = (Button) findViewById(R.id.previous);
         nextBtn = (Button) findViewById(R.id.next);
+        progressDialog = new ProgressDialog(ActivityImage.this);
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
+        progressDialog.setCancelable(false);
 
         initToolbar();
         initImageView();
@@ -90,8 +90,8 @@ public class ActivityImage extends AppCompatActivity {
     }
 
     private void initModules() {
+        nextBtn.setText(R.string.PROCESS);
         if (module_selected == R.id.enhanced_image) {
-            nextBtn.setText(R.string.PROCESS);
             nextBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -99,7 +99,6 @@ public class ActivityImage extends AppCompatActivity {
                 }
             });
         } else {
-            nextBtn.setText(R.string.UPLOAD);
             nextBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -179,7 +178,11 @@ public class ActivityImage extends AppCompatActivity {
     }
 
     private void requestImageFromGallery() {
-        startActivityForResult(new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
+        //startActivityForResult(new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select picture"), GET_FROM_GALLERY );
     }
 
     @Override
@@ -188,20 +191,11 @@ public class ActivityImage extends AppCompatActivity {
 
         //Detects request codes
         if(requestCode==GET_FROM_GALLERY && resultCode == Activity.RESULT_OK) {
-            filePath = data.getData().toString();
-            String mimeType = getContentResolver().getType(Uri.parse(filePath));
-            if (mimeType != null && mimeType.startsWith("image")) {
-                Glide.with(img.getContext()).load(filePath).into(img);
-                nextBtn.setEnabled(true);
-                img.setEnabled(true);
-            } else {
-                Snackbar.make(rootView,"Select an image from gallery", Snackbar.LENGTH_INDEFINITE).setAction("RETRY", new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        requestImageFromGallery();
-                    }
-                }).show();
-            }
+            filePath = Tools.getRealPathFromURI(this, data.getData());
+            //Toast.makeText(getBaseContext(), filePath, Toast.LENGTH_LONG).show();
+            Glide.with(img.getContext()).load(filePath).into(img);
+            nextBtn.setEnabled(true);
+            img.setEnabled(true);
         }
     }
 
@@ -213,7 +207,6 @@ public class ActivityImage extends AppCompatActivity {
 
     private class enhanceImage extends AsyncTask<Bitmap, String, Bitmap> {
 
-        ProgressDialog progressDialog;
         Bitmap sampleImgBmp = null;
         Bitmap aicamImgBmp = null;
 
@@ -242,9 +235,6 @@ public class ActivityImage extends AppCompatActivity {
         }
         @Override
         protected void onPreExecute() {
-            progressDialog = new ProgressDialog(ActivityImage.this);
-            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
-            progressDialog.setCancelable(false);
             progressDialog = ProgressDialog.show(ActivityImage.this,
                     "Image Enhancement",
                     "Processing...");
@@ -253,60 +243,18 @@ public class ActivityImage extends AppCompatActivity {
         protected void onPostExecute(Bitmap result) {
             // execution of result of Long time consuming operation
             progressDialog.dismiss();
-            Toast.makeText(rootView.getContext(), "Photo processing completed", Toast.LENGTH_LONG).show();
+            Toast.makeText(getBaseContext(), "Photo processing completed", Toast.LENGTH_LONG).show();
 
-            actionBar.setTitle("Final Image");
             Glide.with(img.getContext()).load(aicamImgBmp).into(img);
-            previousBtn.setText(R.string.DISCARD);
-            nextBtn.setText(R.string.SAVE);
-            nextBtn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    saveImage(sampleImgBmp, aicamImgBmp);
-
-                    previousBtn.setText(R.string.BACK);
-                    nextBtn.setEnabled(false);
-                    previousBtn.performClick();
-                }
-            });
-            img.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    int pos = 0;
-                    ArrayList<String> images_list = new ArrayList<>();
-                    Bitmap tmpBmp = aicamImgBmp.copy(aicamImgBmp.getConfig(), true);
-                    images_list.add(BitMapTempFile(tmpBmp));
-                    images_list.add(filePath);
-
-                    Intent i = new Intent(ActivityImage.this, ActivityFullScreenImage.class);
-                    i.putExtra(ActivityFullScreenImage.EXTRA_POS, pos);
-                    i.putStringArrayListExtra(ActivityFullScreenImage.EXTRA_IMGS, images_list);
-                    startActivity(i);
-                }
-            });
+            onSuccessUpdates(sampleImgBmp, aicamImgBmp);
         }
         @Override
         protected void onProgressUpdate(String... text) { }
 
-        private String BitMapTempFile(Bitmap bitmap){
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-            byte[] b = baos.toByteArray();
-            File f = null;
-            try {
-                f = File.createTempFile("img_temp", ".jpg", getCacheDir());
-                FileOutputStream fos = new FileOutputStream(f);
-                fos.write(b);
-                fos.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return f.getAbsolutePath();
-        }
     }
 
     public void dialogNoInternet() {
-        Dialog dialog = new DialogUtils(this).buildDialogWarning(R.string.title_no_internet, R.string.msg_no_internet, R.string.TRY_AGAIN, R.string.CLOSE, R.drawable.img_no_internet, new CallbackDialog() {
+        Dialog dialog = new DialogUtils(this).buildDialogWarning(R.string.title_no_internet, R.string.msg_no_internet, R.string.TRY_AGAIN, R.string.CLOSE, R.drawable.img_no_internet, new CallbackDialog2Buttons() {
             @Override
             public void onPositiveClick(Dialog dialog) {
                 dialog.dismiss();
@@ -315,7 +263,7 @@ public class ActivityImage extends AppCompatActivity {
             @Override
             public void onNegativeClick(Dialog dialog) {
                 dialog.dismiss();
-                onBackPressed();
+                //onBackPressed();
             }
         });
         dialog.show();
@@ -325,48 +273,11 @@ public class ActivityImage extends AppCompatActivity {
         if (!NetworkCheck.isConnect(this)) {
             dialogNoInternet();
         } else {
-            //TODO
-            Toast.makeText(this, "TODO", Toast.LENGTH_LONG).show();
-            //if (module_selected == R.id.facial_features)
-                //ay module
-            //else // if (module_selected == R.id.selfie_manipulation)
-                //mr module
-
-            String transform_prnet_url = "camai-transform-prnet.herokuapp.com";
-            AsyncHttpClient client = new AsyncHttpClient();
-			client.addHeader("Connection", "Keep-Alive");
-			client.setTimeout(120 * 1000);
-			client.setConnectTimeout(120 * 1000);
-			client.setResponseTimeout(120 * 1000);
-            RequestParams params = new RequestParams();
-            params.put("x", -50);
-            params.put("y", 0);
-            params.put("z", 250);
-            String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/CamAI/";
-            File sourceFile = new File(path + "trump.obj");
-                File targetFile = new File(path + "trump.jpg");
-			try {
-         		Toast.makeText(getBaseContext(), path + "trump.obj", Toast.LENGTH_LONG).show();
-                params.put("source", sourceFile);
-                params.put("target", targetFile);
-            } catch (FileNotFoundException e) {
-                Toast.makeText(getBaseContext(), "File not found", Toast.LENGTH_LONG).show();
+            if (module_selected == R.id.facial_features)
+                editFacialFeatures();
+            else {// if (module_selected == R.id.selfie_manipulation)
+                manipulateSelfie();
             }
-            client.post(transform_prnet_url, new FileAsyncHttpResponseHandler(this) {
-                @Override
-                public void onSuccess(int statusCode, Header[] headers, File file) {
-                    //show img
-                    if (statusCode == 200)
-                        Glide.with(img.getContext()).load(file).into(img);
-                }
-
-                @Override
-                public void onFailure(int statusCode, Header[] headers, Throwable throwable, File file) {
-                    //failure toast
-                    Toast.makeText(getBaseContext(), "Error occured", Toast.LENGTH_LONG).show();
-                    ;
-                }
-            });
         }
     }
 
@@ -379,49 +290,191 @@ public class ActivityImage extends AppCompatActivity {
         }, 2000);
     }
 
-    private void saveImage(Bitmap sampleImgBmp, Bitmap aicamImgBmp) {
-        if (!PermissionUtil.checkPermission(ActivityImage.this, rootView,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                "Write permission required."))
-            return;
+    private void editFacialFeatures() {
+        Dialog dialog = new DialogUtils(this).buildDialogFacialFeatures(getString(R.string.facial_features), getString(R.string.ff_options), getString(R.string.hair_ff), getString(R.string.bald_ff), getString(R.string.young_ff), getString(R.string.old_ff), getString(R.string.CLOSE), new CallbackDialog4Buttons() {
+            @Override
+            public void onButton1Click(Dialog dialog) {
+                //hair selection case
+                dialog.dismiss();
+                editFacialFeaturesSelection(getString(R.string.hair_ff).toLowerCase());
+            }
+            @Override
+            public void onButton2Click(Dialog dialog) {
+                //bald selection case
+                dialog.dismiss();
+                editFacialFeaturesSelection(getString(R.string.bald_ff).toLowerCase());
+            }
+            @Override
+            public void onButton3Click(Dialog dialog) {
+                //young selection case
+                dialog.dismiss();
+                editFacialFeaturesSelection(getString(R.string.young_ff).toLowerCase());
+            }
+            @Override
+            public void onButton4Click(Dialog dialog) {
+                //old selection case
+                editFacialFeaturesSelection(getString(R.string.old_ff).toLowerCase());
+                dialog.dismiss();
+            }
+        });
+        dialog.show();
+    }
 
-        //String root = Environment.getExternalStorageDirectory().getPath();
-        File baseFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "CamAI");
-        if(!baseFolder.exists()){
-            baseFolder.mkdirs();
-        }
+    private void editFacialFeaturesSelection(String selection) {
+        progressDialog = ProgressDialog.show(ActivityImage.this,
+                "Facial Feature Editing",
+                "Processing...please wait.\nThis may take a while !!");
 
-        ByteArrayOutputStream stream1 = new ByteArrayOutputStream();
-        sampleImgBmp.compress(Bitmap.CompressFormat.JPEG, 100, stream1);
-        byte[] data1 = stream1.toByteArray();
-        ByteArrayOutputStream stream2 = new ByteArrayOutputStream();
-        aicamImgBmp.compress(Bitmap.CompressFormat.JPEG, 100, stream2);
-        byte[] data2 = stream2.toByteArray();
+        String url = getString(R.string.camai_edit_facial_features_url)+"?todo="+selection;
+        Toast.makeText(getBaseContext(), url, Toast.LENGTH_LONG).show();
 
-        //writing image files
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-        String currentDateandTime = sdf.format(new Date());
-        String sampleFileName = baseFolder.getPath() + "/sample_picture_" + currentDateandTime + ".jpg";
-        String camAiFileName = baseFolder.getPath() + "/camAI_picture_" + currentDateandTime + ".jpg";
-
+        RequestParams params = new RequestParams();
         try {
-            FileOutputStream fos1 = new FileOutputStream(sampleFileName);
-            fos1.write(data1);
-            fos1.close();
-            FileOutputStream fos2 = new FileOutputStream(camAiFileName);
-            fos2.write(data2);
-            fos2.close();
-
-            String msg = "Photos saved at " + baseFolder.getAbsolutePath();
-            Toast.makeText(rootView.getContext(), msg, Toast.LENGTH_LONG).show();
-
-            MediaScannerConnection.scanFile(ActivityImage.this,
-                    new String[] { sampleFileName, camAiFileName }, null, null);
-
-        }
-        catch (Exception e) {
+            params.put("source", new File(filePath));
+            //Toast.makeText(getBaseContext(), "File found " + filePath, Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(getBaseContext(), "File not found " + filePath, Toast.LENGTH_LONG).show();
             e.printStackTrace();
         }
+
+        sendHttpPostRequest(url, params);
+    }
+
+    private void manipulateSelfie() {
+        Dialog dialog = new DialogUtils(this).buildDialogSelfieManipulation(getString(R.string.selfie_manipulation), getString(R.string.sm_parameters), getString(R.string.UPLOAD), getString(R.string.CLOSE), new CallbackDialog2Buttons() {
+            @Override
+            public void onPositiveClick(Dialog dialog) {
+                if (!Tools.validateSelfieManipulationParameters(getBaseContext(), dialog, sharedPref))
+                    return;
+                String x = ((EditText) dialog.findViewById(R.id.edt_sm1)).getText().toString();     //eye left right
+                String y = ((EditText) dialog.findViewById(R.id.edt_sm2)).getText().toString();     //head up down
+                String z = ((EditText) dialog.findViewById(R.id.edt_sm3)).getText().toString();     //distance from camera
+                dialog.dismiss();
+                progressDialog = ProgressDialog.show(ActivityImage.this,
+                        "Selfie Manipulation",
+                        "Processing...please wait.\nThis may take a while !!");
+
+                String url = getString(R.string.camai_transform_selfie_url)+"?x="+x+"&y="+y+"&z="+z;
+                //Toast.makeText(getBaseContext(), url, Toast.LENGTH_LONG).show();
+
+                RequestParams params = new RequestParams();
+                try {
+                    params.put("target", new File(filePath));
+                    //Toast.makeText(getBaseContext(), "File found " + filePath, Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    Toast.makeText(getBaseContext(), "File not found " + filePath, Toast.LENGTH_LONG).show();
+                    e.printStackTrace();
+                }
+
+                sendHttpPostRequest(url, params);
+            }
+            @Override
+            public void onNegativeClick(Dialog dialog) {
+                dialog.dismiss();
+            }
+        });
+        dialog.show();
+    }
+
+    private void sendHttpPostRequest(String url, RequestParams params) {
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.setTimeout(180 * 1000);
+        client.setConnectTimeout(180 * 1000);
+        client.setResponseTimeout(180 * 1000);
+        String[] allowedTypes = new String[] { "image/png", "image/jpg", "text/html; charset=utf-8" };
+        client.post(this, url, params,  new BinaryHttpResponseHandler(allowedTypes) {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] binaryData) {
+                if (statusCode==200) {
+                    progressDialog.dismiss();
+                    try {
+                        //File f = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getPath()+"/CamAI/response");
+                        File f = File.createTempFile("img_temp", ".jpg", getCacheDir());
+                        FileOutputStream fos = new FileOutputStream(f);
+                        fos.write(binaryData);
+                        fos.close();
+                        Toast.makeText(getBaseContext(), "Photo processing completed", Toast.LENGTH_LONG).show();
+                        Glide.with(img.getContext()).load(f).into(img);
+
+                        Bitmap sampleImgBmp = Tools.getBitmap(new File(filePath));
+                        Bitmap aicamImgBmp = Tools.getBitmap(f);
+
+                        onSuccessUpdates(sampleImgBmp, aicamImgBmp);
+                        if (module_selected == R.id.selfie_manipulation) {
+                            onSuccessAdditionalUpdates(url);
+                        }
+                    } catch (Exception e) {
+                        Toast.makeText(getBaseContext(), "response temp file write error", Toast.LENGTH_LONG).show();
+                    }
+                }
+            }
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] binaryData, Throwable error) {
+                progressDialog.dismiss();
+                //toast server error here
+                String http_request_error = String.valueOf(statusCode) + "  " + error.toString();
+                String server_error = "";
+                try {
+                    server_error = binaryData.toString();
+                    Toast.makeText(getBaseContext(),  server_error + " " + http_request_error , Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    Toast.makeText(getBaseContext(),  "Server is down " + http_request_error, Toast.LENGTH_LONG).show();
+                }
+                Log.d("http request", error.toString());
+            }
+        });
+    }
+
+    private void onSuccessUpdates(Bitmap sampleImgBmp, Bitmap aicamImgBmp) {
+        actionBar.setTitle(R.string.final_output_image);
+        previousBtn.setText(R.string.DISCARD);
+        nextBtn.setText(R.string.SAVE);
+        nextBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!PermissionUtil.checkPermission(ActivityImage.this, rootView,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        "Write permission required."))
+                    return;
+
+                Tools.saveImage(getBaseContext(), sampleImgBmp, aicamImgBmp, image_source);
+
+                previousBtn.setText(R.string.BACK);
+                nextBtn.setEnabled(false);
+                previousBtn.performClick();
+            }
+        });
+        img.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int pos = 0;
+                ArrayList<String> images_list = new ArrayList<>();
+                Bitmap tmpBmp = aicamImgBmp.copy(aicamImgBmp.getConfig(), true);
+                images_list.add(Tools.BitMapTempFile(getBaseContext(), tmpBmp).getAbsolutePath());
+                images_list.add(filePath);
+
+                Intent i = new Intent(ActivityImage.this, ActivityFullScreenImage.class);
+                i.putExtra(ActivityFullScreenImage.EXTRA_POS, pos);
+                i.putStringArrayListExtra(ActivityFullScreenImage.EXTRA_IMGS, images_list);
+                startActivity(i);
+            }
+        });
+    }
+
+    private void onSuccessAdditionalUpdates(String url) {
+        nextBtn.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                manipulateSelfie();
+                return true;
+            }
+        });
+
+        //set old values
+        String[] tokens = url.split("[=&]+");
+        sharedPref.setIntPref("x", Integer.parseInt(tokens[1]));
+        sharedPref.setIntPref("y", Integer.parseInt(tokens[3]));
+        sharedPref.setIntPref("z", Integer.parseInt(tokens[5]));
     }
 
     private void goToActivity (Class actClass){

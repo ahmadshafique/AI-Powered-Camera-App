@@ -38,7 +38,7 @@ public class ActivityFullScreenImage extends AppCompatActivity {
         items = i.getStringArrayListExtra(EXTRA_IMGS);
         adapter = new AdapterFullScreenImage(ActivityFullScreenImage.this, items);
 
-        if(position<1)
+        if(items.size()==1)
             text_page.setText(String.format(getString(R.string.image_original)));
         else
             text_page.setText(String.format(getString(R.string.image_processed)));

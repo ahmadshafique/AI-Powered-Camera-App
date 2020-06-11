@@ -6,6 +6,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 
 import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -13,7 +14,7 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.fyp.aipoweredcameraapp.data.SharedPref;
-import com.fyp.aipoweredcameraapp.utils.CallbackDialog;
+import com.fyp.aipoweredcameraapp.utils.CallbackDialog2Buttons;
 import com.fyp.aipoweredcameraapp.utils.DialogUtils;
 import com.fyp.aipoweredcameraapp.utils.Tools;
 
@@ -37,7 +38,12 @@ public class ActivityMain extends AppCompatActivity {
         sharedPref = new SharedPref(this);
         initToolbar();
         initComponent();
+
         //this.getSharedPreferences("module_selected", Context.MODE_PRIVATE).edit().clear().apply();
+        //clear previously set selfie manipulation parameters
+        this.getSharedPreferences("x", Context.MODE_PRIVATE).edit().clear().apply();
+        this.getSharedPreferences("y", Context.MODE_PRIVATE).edit().clear().apply();
+        this.getSharedPreferences("z", Context.MODE_PRIVATE).edit().clear().apply();
         //delete temp file
         String filePath = new SharedPref(this).getStringPref("temp_file");
         if (filePath != null) {
@@ -80,7 +86,7 @@ public class ActivityMain extends AppCompatActivity {
     }
 
     public void dialogGetImage() {
-            Dialog dialog = new DialogUtils(this).buildDialogSelection(R.string.title_get_image, R.string.msg_get_image, R.string.CAMERA, R.string.GALLERY, R.string.CLOSE, R.drawable.img_select_source, new CallbackDialog() {
+            Dialog dialog = new DialogUtils(this).buildDialogSelection(R.string.title_get_image, R.string.msg_get_image, R.string.CAMERA, R.string.GALLERY, R.string.CLOSE, R.drawable.img_select_source, new CallbackDialog2Buttons() {
                 @Override
             public void onPositiveClick(Dialog dialog) {
                 //camera source
