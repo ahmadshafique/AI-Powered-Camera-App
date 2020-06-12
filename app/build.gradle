@@ -25,6 +25,14 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+			applicationVariants.all { variant ->
+                variant.outputs.all {
+                    def appName = "CamAI"
+                    if (outputFileName != null && outputFileName.endsWith('.apk')) {
+                        outputFileName = appName + " " + defaultConfig.versionName + ".apk"
+                    }
+                }
+            }
         }
     }
     android {
@@ -51,6 +59,12 @@ android {
         pickFirst 'lib/x86/libopencv_java4.so'
         pickFirst '**/*.so'
     }
+    /*splits {
+        abi {
+            reset()
+            include "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
+    }*/
     /*allprojects {
         tasks.withType(JavaCompile) {
             options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"

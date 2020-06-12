@@ -93,7 +93,7 @@
             android:layout_height="wrap_content"
             android:inputType="number"
             android:maxLength="3"
-            android:hint="@string/distance_limit"/>
+            android:hint="@string/distance_limit" />
 
     </LinearLayout>
 

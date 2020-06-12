@@ -9,7 +9,7 @@
     <string name="title_EI">Create an Enhanced Image</string>
     <string name="desc_EI">Creates an enhanced image having low noise and better sharpness from the provided image.</string>
     <string name="title_FF">Edit a Facial Feature</string>
-    <string name="desc_FF">Edits facial feature using a facial map in the provided image.</string>
+    <string name="desc_FF">Edits facial feature using given styles in the provided image.</string>
     <string name="title_SM">Manipulate a Selfie</string>
     <string name="desc_SM">Manipulates parameters such as yaw, pitch and distance from camera in the provided image.</string>
     <string name="press_again_exit_app">Press again to exit</string>
@@ -58,11 +58,11 @@
     <string name="app_version">1.0</string>
 
     <!-- Http urls -->
-    <string name="camai_face3d_url">https://camai-face3d.azurewebsites.net</string>
-    <string name="camai_transform_prnet_url">https://camai-transform-prnet.herokuapp.com</string>
-    <string name="camai_transform_selfie_url">https://camai-transform-selfie.azurewebsites.net/both</string>
-    <string name="camai_edit_facial_features_url">http://a87b7c5d16e0.ngrok.io/</string>
-
+    <string name="camai_face3d_azureweb_url">https://camai-face3d.azurewebsites.net</string>
+    <string name="camai_transform_prnet_herokuapp_url">https://camai-transform-prnet.herokuapp.com</string>
+    <string name="camai_transform_selfie_azureweb_url">https://camai-transform-selfie.azurewebsites.net</string>
+    <string name="camai_edit_facial_features_url"></string>
+    <string name="camai_transform_selfie_url"></string>
 
     <string name="CAMERA">CAMERA</string>
     <string name="GALLERY">GALLERY</string>

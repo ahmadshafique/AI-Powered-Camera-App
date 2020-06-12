@@ -46,7 +46,7 @@
             android:layout_height="wrap_content"
             android:text="@string/hair_ff"
             android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
-            android:textColor="@color/grey_80"
+            android:textColor="@color/grey_60"
             android:textStyle="bold" />
 
         <Button
@@ -56,7 +56,7 @@
             android:layout_height="wrap_content"
             android:text="@string/bald_ff"
             android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
-            android:textColor="@color/grey_90"
+            android:textColor="@color/grey_60"
             android:textStyle="bold" />
 
     </LinearLayout>
@@ -76,7 +76,7 @@
             android:layout_height="wrap_content"
             android:text="@string/young_ff"
             android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
-            android:textColor="@color/grey_80"
+            android:textColor="@color/grey_60"
             android:textStyle="bold" />
 
         <Button
@@ -86,7 +86,7 @@
             android:layout_height="wrap_content"
             android:text="@string/old_ff"
             android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
-            android:textColor="@color/grey_90"
+            android:textColor="@color/grey_60"
             android:textStyle="bold" />
 
     </LinearLayout>

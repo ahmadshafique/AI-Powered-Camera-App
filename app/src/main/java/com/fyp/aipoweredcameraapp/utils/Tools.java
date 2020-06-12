@@ -33,7 +33,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Scanner;
 
 public class Tools {
 
@@ -272,11 +274,11 @@ public class Tools {
     public static String getRealPathFromURI(Context context, Uri contentURI) {
         String result;
         Cursor cursor = context.getContentResolver().query(contentURI, null, null, null, null);
-        if (cursor == null) { // Source is Dropbox or other similar local file path
+        if (cursor == null || !(cursor.moveToFirst()) || cursor.getCount() == 0)    // Source is Dropbox or other similar local file path
             result = contentURI.getPath();
-        } else {
+         else {
             cursor.moveToFirst();
-            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+            int idx = cursor.getColumnIndex(MediaStore.Images.Media.DATA);//Images.ImageColumns.DATA);
             result = cursor.getString(idx);
             cursor.close();
         }
@@ -326,5 +328,25 @@ public class Tools {
             }
         }
         return true;
+    }
+
+    public static ArrayList<String> getServerURLs(Context context) {
+        ArrayList<String> urls = new ArrayList<>();
+        try {
+            File urlsFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getPath() + "/CamAI/urls.txt");
+            if (urlsFile.canRead()) {
+                Scanner myReader = new Scanner(urlsFile);
+                int count = 0;
+                while (myReader.hasNextLine() & count < 2) {
+                    String data = myReader.nextLine();
+                    urls.add(data);
+                    count ++;
+                }
+                myReader.close();
+            }
+        } catch (Exception e) {
+            Toast.makeText(context, "Error reading urls file", Toast.LENGTH_LONG).show();
+        }
+        return urls;
     }
 }

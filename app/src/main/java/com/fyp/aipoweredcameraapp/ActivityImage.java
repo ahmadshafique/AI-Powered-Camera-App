@@ -7,9 +7,11 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -57,6 +59,9 @@ public class ActivityImage extends AppCompatActivity {
     private String image_source;
     private SharedPref sharedPref;
     private String filePath;
+	private Uri fileUri;
+    private ArrayList<String> urls;
+    private boolean readFileURLs;
 
     public static final int GET_FROM_GALLERY = 1;
 
@@ -75,6 +80,7 @@ public class ActivityImage extends AppCompatActivity {
         progressDialog = new ProgressDialog(ActivityImage.this);
         progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
         progressDialog.setCancelable(false);
+        readFileURLs = true;
 
         initToolbar();
         initImageView();
@@ -124,7 +130,7 @@ public class ActivityImage extends AppCompatActivity {
             public void onClick(View v) {
                 int pos = 0;
                 ArrayList<String> images_list = new ArrayList<>();
-                images_list.add(filePath);
+                images_list.add(fileUri.toString());
 
                 Intent i = new Intent(ActivityImage.this, ActivityFullScreenImage.class);
                 i.putExtra(ActivityFullScreenImage.EXTRA_POS, pos);
@@ -178,11 +184,10 @@ public class ActivityImage extends AppCompatActivity {
     }
 
     private void requestImageFromGallery() {
-        //startActivityForResult(new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI), GET_FROM_GALLERY);
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "Select picture"), GET_FROM_GALLERY );
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setDataAndType(MediaStore.Images.Media.INTERNAL_CONTENT_URI, "image/*");
+        startActivityForResult(intent, GET_FROM_GALLERY);
+        //startActivityForResult(Intent.createChooser(intent, "Select picture"), GET_FROM_GALLERY );
     }
 
     @Override
@@ -192,8 +197,9 @@ public class ActivityImage extends AppCompatActivity {
         //Detects request codes
         if(requestCode==GET_FROM_GALLERY && resultCode == Activity.RESULT_OK) {
             filePath = Tools.getRealPathFromURI(this, data.getData());
+			fileUri = data.getData();
             //Toast.makeText(getBaseContext(), filePath, Toast.LENGTH_LONG).show();
-            Glide.with(img.getContext()).load(filePath).into(img);
+            Glide.with(img.getContext()).load(fileUri).into(img);
             nextBtn.setEnabled(true);
             img.setEnabled(true);
         }
@@ -237,7 +243,7 @@ public class ActivityImage extends AppCompatActivity {
         protected void onPreExecute() {
             progressDialog = ProgressDialog.show(ActivityImage.this,
                     "Image Enhancement",
-                    "Processing...");
+                    "Processing...please wait.");
         }
         @Override
         protected void onPostExecute(Bitmap result) {
@@ -273,6 +279,17 @@ public class ActivityImage extends AppCompatActivity {
         if (!NetworkCheck.isConnect(this)) {
             dialogNoInternet();
         } else {
+            if (readFileURLs) {
+                if (!PermissionUtil.checkPermission(ActivityImage.this, rootView,
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        "Read permission required to read urls file."))
+                    return;
+                urls = Tools.getServerURLs(this);
+                if (urls.size() < 2) {
+                    Toast.makeText(this, "Server URLs not valid", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
             if (module_selected == R.id.facial_features)
                 editFacialFeatures();
             else {// if (module_selected == R.id.selfie_manipulation)
@@ -323,10 +340,14 @@ public class ActivityImage extends AppCompatActivity {
     private void editFacialFeaturesSelection(String selection) {
         progressDialog = ProgressDialog.show(ActivityImage.this,
                 "Facial Feature Editing",
-                "Processing...please wait.\nThis may take a while !!");
-
-        String url = getString(R.string.camai_edit_facial_features_url)+"?todo="+selection;
-        Toast.makeText(getBaseContext(), url, Toast.LENGTH_LONG).show();
+                "Processing...please wait.");
+        String url = "";
+        if (readFileURLs) {
+            url = urls.get(0) + "?todo=" + selection;
+        } else {
+            url = getString(R.string.camai_edit_facial_features_url)+"?todo="+selection;
+        }
+        //Toast.makeText(getBaseContext(), url, Toast.LENGTH_LONG).show();
 
         RequestParams params = new RequestParams();
         try {
@@ -352,9 +373,14 @@ public class ActivityImage extends AppCompatActivity {
                 dialog.dismiss();
                 progressDialog = ProgressDialog.show(ActivityImage.this,
                         "Selfie Manipulation",
-                        "Processing...please wait.\nThis may take a while !!");
+                        "Processing...please wait.");
 
-                String url = getString(R.string.camai_transform_selfie_url)+"?x="+x+"&y="+y+"&z="+z;
+                String url = "";
+                if (readFileURLs) {
+                    url = urls.get(0)+"/both?x="+x+"&y="+y+"&z="+z;
+                } else {
+                    url = getString(R.string.camai_transform_selfie_url)+"/both?x="+x+"&y="+y+"&z="+z;
+                }
                 //Toast.makeText(getBaseContext(), url, Toast.LENGTH_LONG).show();
 
                 RequestParams params = new RequestParams();
@@ -381,7 +407,7 @@ public class ActivityImage extends AppCompatActivity {
         client.setTimeout(180 * 1000);
         client.setConnectTimeout(180 * 1000);
         client.setResponseTimeout(180 * 1000);
-        String[] allowedTypes = new String[] { "image/png", "image/jpg", "text/html; charset=utf-8" };
+        String[] allowedTypes = new String[] { "image/png", "image/jpg", "text/html; charset=utf-8", "text/plain" };
         client.post(this, url, params,  new BinaryHttpResponseHandler(allowedTypes) {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] binaryData) {
