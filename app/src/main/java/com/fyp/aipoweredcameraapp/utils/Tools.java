@@ -332,17 +332,29 @@ public class Tools {
 
     public static ArrayList<String> getServerURLs(Context context) {
         ArrayList<String> urls = new ArrayList<>();
+        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getPath() + "/CamAI/";
         try {
-            File urlsFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getPath() + "/CamAI/urls.txt");
+            File urlsFile = new File(path+"urls.txt");
             if (urlsFile.canRead()) {
                 Scanner myReader = new Scanner(urlsFile);
                 int count = 0;
                 while (myReader.hasNextLine() & count < 2) {
-                    String data = myReader.nextLine();
+                    String data = myReader.nextLine().trim().toLowerCase();
                     urls.add(data);
                     count ++;
                 }
                 myReader.close();
+                if (urls.size() < 2) {
+                    Toast.makeText(context, "Server URLs not valid", Toast.LENGTH_LONG).show();
+                    urls.clear();
+                }
+            } else {
+                File baseFolder = new File(path);
+                if(!baseFolder.exists()){
+                    baseFolder.mkdirs();
+                }
+                urlsFile.createNewFile();
+                Toast.makeText(context, "URLs file not found. Add server URLs in urls.txt in CamAI folder", Toast.LENGTH_LONG).show();
             }
         } catch (Exception e) {
             Toast.makeText(context, "Error reading urls file", Toast.LENGTH_LONG).show();

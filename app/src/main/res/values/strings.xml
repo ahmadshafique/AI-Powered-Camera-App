@@ -21,9 +21,9 @@
     <!--All data for Other Activities -->
     <string name="camera_not_found">No camera on this device</string>
     <string name="select_image">Select an Image</string>
-    <string name="image_preview">Image Preview</string>
+    <string name="image_preview">Preview Image</string>
     <string name="please_wait_text">Please wait while the image id processed…</string>
-    <string name="final_output_image">Final Output Image</string>
+    <string name="final_output_image">Output Image</string>
     <string name="select_facial_features">Select Facial Features</string>
     <string name="select_fiducial_points">Select Fiducial Points</string>
     <string name="pitch">Pitch</string>
@@ -59,10 +59,11 @@
 
     <!-- Http urls -->
     <string name="camai_face3d_azureweb_url">https://camai-face3d.azurewebsites.net</string>
-    <string name="camai_transform_prnet_herokuapp_url">https://camai-transform-prnet.herokuapp.com</string>
     <string name="camai_transform_selfie_azureweb_url">https://camai-transform-selfie.azurewebsites.net</string>
-    <string name="camai_edit_facial_features_url"></string>
-    <string name="camai_transform_selfie_url"></string>
+    <string name="camai_transform_prnet_herokuapp_url">https://camai-transform-prnet.herokuapp.com</string>
+    <string name="readFileURLs">false</string>
+    <string name="camai_edit_facial_features_url">https://camai-facial-features.azurewebsites.net</string>
+    <string name="camai_transform_selfie_url">https://camai-transform-selfie.azurewebsites.net</string>
 
     <string name="CAMERA">CAMERA</string>
     <string name="GALLERY">GALLERY</string>

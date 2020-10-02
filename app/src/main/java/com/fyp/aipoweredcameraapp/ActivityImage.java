@@ -80,7 +80,7 @@ public class ActivityImage extends AppCompatActivity {
         progressDialog = new ProgressDialog(ActivityImage.this);
         progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
         progressDialog.setCancelable(false);
-        readFileURLs = true;
+        readFileURLs = Boolean.parseBoolean(getString(R.string.readFileURLs));
 
         initToolbar();
         initImageView();
@@ -88,6 +88,8 @@ public class ActivityImage extends AppCompatActivity {
         initModules();
         System.loadLibrary("native-lib");
     }
+
+    // This function initiates image source
     private void initImageSource() {
         if (image_source.equals("camera"))
             initCameraSource();
@@ -95,6 +97,7 @@ public class ActivityImage extends AppCompatActivity {
             initGallerySource();
     }
 
+    // This function sets up on click listener according to module selected
     private void initModules() {
         nextBtn.setText(R.string.PROCESS);
         if (module_selected == R.id.enhanced_image) {
@@ -114,6 +117,7 @@ public class ActivityImage extends AppCompatActivity {
         }
     }
 
+    // This function sets up toolbar
     private void initToolbar() {
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -123,6 +127,7 @@ public class ActivityImage extends AppCompatActivity {
         actionBar.setTitle(R.string.image_preview);
     }
 
+    // This function sets up Image View
     private void initImageView() {
         img = (TouchImageView) findViewById(R.id.loadImageView);
         img.setOnClickListener(new View.OnClickListener() {
@@ -130,7 +135,10 @@ public class ActivityImage extends AppCompatActivity {
             public void onClick(View v) {
                 int pos = 0;
                 ArrayList<String> images_list = new ArrayList<>();
-                images_list.add(fileUri.toString());
+                if (image_source.equals("camera"))
+                    images_list.add(filePath);
+                else
+                    images_list.add(fileUri.toString());
 
                 Intent i = new Intent(ActivityImage.this, ActivityFullScreenImage.class);
                 i.putExtra(ActivityFullScreenImage.EXTRA_POS, pos);
@@ -142,6 +150,7 @@ public class ActivityImage extends AppCompatActivity {
         img.setEnabled(false);
     }
 
+    // This function initialises camera as image source
     private void initCameraSource() {
         filePath = getIntent().getStringExtra("filePath");
         if (filePath.isEmpty())
@@ -166,6 +175,7 @@ public class ActivityImage extends AppCompatActivity {
         });
     }
 
+    // This function initialises gallery as image source
     private void initGallerySource() {
         nextBtn.setEnabled(false);
         requestImageFromGallery();
@@ -183,6 +193,7 @@ public class ActivityImage extends AppCompatActivity {
         });
     }
 
+    // This function launches an intent to get image from gallery
     private void requestImageFromGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK);
         intent.setDataAndType(MediaStore.Images.Media.INTERNAL_CONTENT_URI, "image/*");
@@ -190,6 +201,7 @@ public class ActivityImage extends AppCompatActivity {
         //startActivityForResult(Intent.createChooser(intent, "Select picture"), GET_FROM_GALLERY );
     }
 
+    // This function handles response of intent to get image from gallery
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -205,12 +217,14 @@ public class ActivityImage extends AppCompatActivity {
         }
     }
 
+    // This function launches async for image enhancement module
     private void processImage() {
         Bitmap sampleImgBmp = ((BitmapDrawable)img.getDrawable()).getBitmap();
         enhanceImage runner = new enhanceImage();
         runner.execute(sampleImgBmp);
     }
 
+    // Inner AsyncTask class for image enhancement module
     private class enhanceImage extends AsyncTask<Bitmap, String, Bitmap> {
 
         Bitmap sampleImgBmp = null;
@@ -259,6 +273,7 @@ public class ActivityImage extends AppCompatActivity {
 
     }
 
+    // Dialog to check for next action when internet not connected
     public void dialogNoInternet() {
         Dialog dialog = new DialogUtils(this).buildDialogWarning(R.string.title_no_internet, R.string.msg_no_internet, R.string.TRY_AGAIN, R.string.CLOSE, R.drawable.img_no_internet, new CallbackDialog2Buttons() {
             @Override
@@ -275,6 +290,7 @@ public class ActivityImage extends AppCompatActivity {
         dialog.show();
     }
 
+    // This function calls upload image to server for selfie manipulation and facial features editing
     private void uploadImage() {
         if (!NetworkCheck.isConnect(this)) {
             dialogNoInternet();
@@ -282,11 +298,10 @@ public class ActivityImage extends AppCompatActivity {
             if (readFileURLs) {
                 if (!PermissionUtil.checkPermission(ActivityImage.this, rootView,
                         Manifest.permission.READ_EXTERNAL_STORAGE,
-                        "Read permission required to read urls file."))
+                        "Read permission required for urls file."))
                     return;
                 urls = Tools.getServerURLs(this);
-                if (urls.size() < 2) {
-                    Toast.makeText(this, "Server URLs not valid", Toast.LENGTH_LONG).show();
+                if (urls.size() == 0) {
                     return;
                 }
             }
@@ -298,6 +313,7 @@ public class ActivityImage extends AppCompatActivity {
         }
     }
 
+    // In case of no internet detected, retry to check network connection
     private void retryUploadImage() {
         new Handler().postDelayed(new Runnable() {
             @Override
@@ -307,6 +323,7 @@ public class ActivityImage extends AppCompatActivity {
         }, 2000);
     }
 
+    // This function shows up dialog to get facial features style parameters
     private void editFacialFeatures() {
         Dialog dialog = new DialogUtils(this).buildDialogFacialFeatures(getString(R.string.facial_features), getString(R.string.ff_options), getString(R.string.hair_ff), getString(R.string.bald_ff), getString(R.string.young_ff), getString(R.string.old_ff), getString(R.string.CLOSE), new CallbackDialog4Buttons() {
             @Override
@@ -337,30 +354,32 @@ public class ActivityImage extends AppCompatActivity {
         dialog.show();
     }
 
+    // This function sets up url and params of http request for facial features editing
     private void editFacialFeaturesSelection(String selection) {
         progressDialog = ProgressDialog.show(ActivityImage.this,
                 "Facial Feature Editing",
                 "Processing...please wait.");
         String url = "";
-        if (readFileURLs) {
+        if (readFileURLs)
             url = urls.get(0) + "?todo=" + selection;
-        } else {
+        else
             url = getString(R.string.camai_edit_facial_features_url)+"?todo="+selection;
-        }
-        //Toast.makeText(getBaseContext(), url, Toast.LENGTH_LONG).show();
 
-        RequestParams params = new RequestParams();
         try {
-            params.put("source", new File(filePath));
+            RequestParams params = new RequestParams();
+            if (PermissionUtil.isGranted(ActivityImage.this, Manifest.permission.READ_EXTERNAL_STORAGE))
+                params.put("source", new File(filePath));
+            else
+                params.put("source", Tools.BitMapTempFile(getBaseContext(), ((BitmapDrawable)img.getDrawable()).getBitmap()));
             //Toast.makeText(getBaseContext(), "File found " + filePath, Toast.LENGTH_LONG).show();
+            sendHttpPostRequest(url, params);
         } catch (Exception e) {
             Toast.makeText(getBaseContext(), "File not found " + filePath, Toast.LENGTH_LONG).show();
             e.printStackTrace();
         }
-
-        sendHttpPostRequest(url, params);
     }
 
+    // This function sets up url and params of http request for selfie manipulation
     private void manipulateSelfie() {
         Dialog dialog = new DialogUtils(this).buildDialogSelfieManipulation(getString(R.string.selfie_manipulation), getString(R.string.sm_parameters), getString(R.string.UPLOAD), getString(R.string.CLOSE), new CallbackDialog2Buttons() {
             @Override
@@ -376,23 +395,23 @@ public class ActivityImage extends AppCompatActivity {
                         "Processing...please wait.");
 
                 String url = "";
-                if (readFileURLs) {
-                    url = urls.get(0)+"/both?x="+x+"&y="+y+"&z="+z;
-                } else {
+                if (readFileURLs)
+                    url = urls.get(1)+"/both?x="+x+"&y="+y+"&z="+z;
+                else
                     url = getString(R.string.camai_transform_selfie_url)+"/both?x="+x+"&y="+y+"&z="+z;
-                }
-                //Toast.makeText(getBaseContext(), url, Toast.LENGTH_LONG).show();
 
-                RequestParams params = new RequestParams();
                 try {
-                    params.put("target", new File(filePath));
+                    RequestParams params = new RequestParams();
+                    if (PermissionUtil.isGranted(ActivityImage.this, Manifest.permission.READ_EXTERNAL_STORAGE))
+                        params.put("target", new File(filePath));
+                    else
+                        params.put("target", Tools.BitMapTempFile(getBaseContext(), ((BitmapDrawable)img.getDrawable()).getBitmap()));
                     //Toast.makeText(getBaseContext(), "File found " + filePath, Toast.LENGTH_LONG).show();
+                    sendHttpPostRequest(url, params);
                 } catch (Exception e) {
                     Toast.makeText(getBaseContext(), "File not found " + filePath, Toast.LENGTH_LONG).show();
                     e.printStackTrace();
                 }
-
-                sendHttpPostRequest(url, params);
             }
             @Override
             public void onNegativeClick(Dialog dialog) {
@@ -402,10 +421,12 @@ public class ActivityImage extends AppCompatActivity {
         dialog.show();
     }
 
+    // This function send http post request for facial features editing and selfie manipulation
     private void sendHttpPostRequest(String url, RequestParams params) {
+        //Toast.makeText(getBaseContext(), url, Toast.LENGTH_LONG).show();
         AsyncHttpClient client = new AsyncHttpClient();
         client.setTimeout(180 * 1000);
-        client.setConnectTimeout(180 * 1000);
+        client.setConnectTimeout(20 * 1000);
         client.setResponseTimeout(180 * 1000);
         String[] allowedTypes = new String[] { "image/png", "image/jpg", "text/html; charset=utf-8", "text/plain" };
         client.post(this, url, params,  new BinaryHttpResponseHandler(allowedTypes) {
@@ -421,13 +442,18 @@ public class ActivityImage extends AppCompatActivity {
                         fos.close();
                         Toast.makeText(getBaseContext(), "Photo processing completed", Toast.LENGTH_LONG).show();
                         Glide.with(img.getContext()).load(f).into(img);
+						
+						Bitmap sampleImgBmp = null;
+						if (image_source.equals("camera") || PermissionUtil.isGranted(ActivityImage.this, Manifest.permission.READ_EXTERNAL_STORAGE))
+                            sampleImgBmp = Tools.getBitmap(new File(filePath));
+                        else
+                            sampleImgBmp = ((BitmapDrawable) img.getDrawable()).getBitmap();
 
-                        Bitmap sampleImgBmp = Tools.getBitmap(new File(filePath));
                         Bitmap aicamImgBmp = Tools.getBitmap(f);
 
                         onSuccessUpdates(sampleImgBmp, aicamImgBmp);
                         if (module_selected == R.id.selfie_manipulation) {
-                            onSuccessAdditionalUpdates(url);
+                            onSuccessAdditionalUpdatesMS(url);
                         }
                     } catch (Exception e) {
                         Toast.makeText(getBaseContext(), "response temp file write error", Toast.LENGTH_LONG).show();
@@ -451,6 +477,7 @@ public class ActivityImage extends AppCompatActivity {
         });
     }
 
+    // This function updates display views and listeners on success result
     private void onSuccessUpdates(Bitmap sampleImgBmp, Bitmap aicamImgBmp) {
         actionBar.setTitle(R.string.final_output_image);
         previousBtn.setText(R.string.DISCARD);
@@ -470,6 +497,7 @@ public class ActivityImage extends AppCompatActivity {
                 previousBtn.performClick();
             }
         });
+        // on click call for full screen image view
         img.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -487,7 +515,9 @@ public class ActivityImage extends AppCompatActivity {
         });
     }
 
-    private void onSuccessAdditionalUpdates(String url) {
+    /// This function sets updates upon success result of selfie manipulation
+    private void onSuccessAdditionalUpdatesMS(String url) {
+        // for resending the request, real time
         nextBtn.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
@@ -496,13 +526,14 @@ public class ActivityImage extends AppCompatActivity {
             }
         });
 
-        //set old values
+        //set old values for next input validation of selfie manipulation parameters
         String[] tokens = url.split("[=&]+");
         sharedPref.setIntPref("x", Integer.parseInt(tokens[1]));
         sharedPref.setIntPref("y", Integer.parseInt(tokens[3]));
         sharedPref.setIntPref("z", Integer.parseInt(tokens[5]));
     }
 
+    // / This function calls for next activity killing current activity
     private void goToActivity (Class actClass){
         Intent i = new Intent(ActivityImage.this, actClass);
         startActivity(i);
@@ -511,6 +542,7 @@ public class ActivityImage extends AppCompatActivity {
         finish();
     }
 
+    // This function handles click on back arrow in toolbar
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int item_id = item.getItemId();
