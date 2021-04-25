@@ -23,8 +23,8 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         agarwal.cpp
+        aie.cpp
         contrast_enhancement.cpp
-        guidedfilter.cpp
         syn-ef.cpp
         native-lib.cpp)
 
