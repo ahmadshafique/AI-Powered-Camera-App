@@ -3,7 +3,6 @@
 #include <opencv2/opencv.hpp>
 
 #include "contrast_enhancement.h"
-#include "guidedfilter.h"
 
 #include"syn-ef.h"
 
@@ -209,16 +208,7 @@ bool is_hdr(Mat img) {
 }
 
 
-void synEF(const Mat &prev, Mat &res) {
-	//reduce size to visualize better
-	int big;
-	if (prev.rows > prev.cols)
-		big = prev.rows;
-	else
-		big = prev.cols;
-	double sm = 640.0 / big;
-	resize(prev, prev, Size(), sm, sm);
-
+void synEF(Mat &prev, Mat &res) {
 	Mat contr, temp, ptemp = prev.clone(), ctemp;
 	vector<Mat> pme = { prev.clone() };		//vector containing images for exposure fusion.
 

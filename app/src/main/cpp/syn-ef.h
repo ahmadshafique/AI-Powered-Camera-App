@@ -9,7 +9,7 @@
 using namespace cv;
 
 
-void synEF(const cv::Mat &prev, cv::Mat &res);
+void synEF(cv::Mat &prev, cv::Mat &res);
 
 
 #endif //TRY4_SYN_EF_H

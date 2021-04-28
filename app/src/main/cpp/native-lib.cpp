@@ -12,8 +12,8 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_fyp_aipoweredcameraapp_ActivityImage_synEFFromJNI(JNIEnv *env, jobject thiz,
                                                            jlong frame, jlong res) {
-    Mat mprev = (Mat *) frame;
-    Mat mres = (Mat *) res;
+    Mat &mprev = *(Mat *) frame;
+    Mat &mres = *(Mat *) res;
 
     cvtColor(mprev, mprev, COLOR_BGRA2RGB);
 
