@@ -2,6 +2,7 @@
 
 #include "agarwal.h"
 
+
 void JHE(const cv::Mat & src, cv::Mat & dst)
 {
 	int rows = src.rows;

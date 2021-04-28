@@ -2,4 +2,5 @@
 
 using namespace cv;
 
-void contrastEnhancement(const cv::Mat& src, cv::Mat& dst);
+
+void contrastEnhancement(const cv::Mat& src, cv::Mat& dst, int modes);
